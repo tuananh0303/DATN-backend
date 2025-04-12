@@ -1,14 +1,15 @@
 import { IFacilityService } from './ifacility.service';
 import { UUID } from 'crypto';
 import { Facility } from './facility.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CreateFacilityDto } from './dtos/requests/create-facility.dto';
 import { PersonService } from 'src/people/person.service';
 import { FieldGroupService } from 'src/field-groups/field-group.service';
 import { CertificateService } from 'src/certificates/certificate.service';
 import { LicenseService } from 'src/licenses/license.service';
 import { CloudUploaderService } from 'src/cloud-uploader/cloud-uploader.service';
-import { ApproveService } from 'src/approves/approve.service';
+import { ApprovalService } from 'src/approvals/approval.service';
+import { SportService } from 'src/sports/sport.service';
 export declare class FacilityService implements IFacilityService {
     private readonly facilityRepository;
     private readonly dataSource;
@@ -17,8 +18,9 @@ export declare class FacilityService implements IFacilityService {
     private readonly certificateService;
     private readonly licenseService;
     private readonly cloudUploaderService;
-    private readonly approveService;
-    constructor(facilityRepository: Repository<Facility>, dataSource: DataSource, personService: PersonService, fieldGroupService: FieldGroupService, certificateService: CertificateService, licenseService: LicenseService, cloudUploaderService: CloudUploaderService, approveService: ApproveService);
+    private readonly approvalService;
+    private readonly sportService;
+    constructor(facilityRepository: Repository<Facility>, dataSource: DataSource, personService: PersonService, fieldGroupService: FieldGroupService, certificateService: CertificateService, licenseService: LicenseService, cloudUploaderService: CloudUploaderService, approvalService: ApprovalService, sportService: SportService);
     findOneByIdAndOwnerId(facilityId: UUID, ownerId: UUID): Promise<Facility>;
     create(createFacilityDto: CreateFacilityDto, images: Express.Multer.File[], ownerId: UUID, certificate: Express.Multer.File, licenses?: Express.Multer.File[], sportIds?: number[]): Promise<{
         message: string;
@@ -28,6 +30,15 @@ export declare class FacilityService implements IFacilityService {
     getByOwner(ownerId: UUID): Promise<any[]>;
     getByFacility(facilityId: UUID): Promise<Facility>;
     findOneById(facilityId: UUID): Promise<Facility>;
-    approve(facility: Facility): Promise<Facility>;
-    reject(facility: Facility): Promise<Facility>;
+    findOneByIdWithTransaction(facilityId: UUID, manager: EntityManager): Promise<Facility>;
+    findOneByIdAndOwnerWithTransaction(facilityId: UUID, manager: EntityManager, ownerId: UUID): Promise<Facility>;
+    updateName(facilityId: UUID, name: string, certificate: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
+    updateCertificate(facilityId: UUID, certificate: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
+    updateLicense(facilityId: UUID, sportId: number, license: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
 }

@@ -6,7 +6,7 @@ import { Certificate } from 'src/certificates/certificate.entity';
 import { License } from 'src/licenses/license.entity';
 import { Service } from 'src/services/service.entity';
 import { Voucher } from 'src/vouchers/voucher.entity';
-import { Approve } from 'src/approves/approve.entity';
+import { Approval } from 'src/approvals/approval.entity';
 export declare class Facility {
     id: UUID;
     name: string;
@@ -31,6 +31,6 @@ export declare class Facility {
     owner: Person;
     certificate: Certificate;
     licenses: License[];
-    approves: Approve[];
+    approvals: Approval[];
     beforeInsertAndUpdate(): void;
 }

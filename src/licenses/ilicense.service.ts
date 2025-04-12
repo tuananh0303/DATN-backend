@@ -11,6 +11,13 @@ export interface ILicenseService {
     manager: EntityManager,
   ): Promise<License>;
 
+  createNoUploadWithTransction(
+    license: string,
+    facility: Facility,
+    sportId: number,
+    manager: EntityManager,
+  ): Promise<License>;
+
   findOneByIdWithTransaction(
     facilityId: UUID,
     sportId: number,

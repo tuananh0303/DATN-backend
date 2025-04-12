@@ -19,7 +19,7 @@ const certificate_entity_1 = require("../certificates/certificate.entity");
 const license_entity_1 = require("../licenses/license.entity");
 const service_entity_1 = require("../services/service.entity");
 const voucher_entity_1 = require("../vouchers/voucher.entity");
-const approve_entity_1 = require("../approves/approve.entity");
+const approval_entity_1 = require("../approvals/approval.entity");
 let Facility = class Facility {
     id;
     name;
@@ -44,7 +44,7 @@ let Facility = class Facility {
     owner;
     certificate;
     licenses;
-    approves;
+    approvals;
     beforeInsertAndUpdate() {
         (0, is_before_1.isBefore)(this.openTime1, this.closeTime1, 'Open time must be before close time');
         this.numberOfShifts = 1;
@@ -210,9 +210,9 @@ __decorate([
     __metadata("design:type", Array)
 ], Facility.prototype, "licenses", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)(() => approve_entity_1.Approve, (approves) => approves.facility),
+    (0, typeorm_1.OneToMany)(() => approval_entity_1.Approval, (approvals) => approvals.facility),
     __metadata("design:type", Array)
-], Facility.prototype, "approves", void 0);
+], Facility.prototype, "approvals", void 0);
 __decorate([
     (0, typeorm_1.BeforeInsert)(),
     (0, typeorm_1.BeforeUpdate)(),

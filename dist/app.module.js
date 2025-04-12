@@ -29,7 +29,7 @@ const certificate_module_1 = require("./certificates/certificate.module");
 const license_module_1 = require("./licenses/license.module");
 const service_module_1 = require("./services/service.module");
 const voucher_module_1 = require("./vouchers/voucher.module");
-const approve_module_1 = require("./approves/approve.module");
+const approval_module_1 = require("./approvals/approval.module");
 const booking_module_1 = require("./bookings/booking.module");
 const booking_slot_module_1 = require("./booking-slots/booking-slot.module");
 const additional_service_module_1 = require("./additional-services/additional-service.module");
@@ -69,7 +69,7 @@ exports.AppModule = AppModule = __decorate([
             license_module_1.LicenseModule,
             service_module_1.ServiceModule,
             voucher_module_1.VoucherModule,
-            approve_module_1.ApproveModule,
+            approval_module_1.ApprovalModule,
             booking_module_1.BookingModule,
             booking_slot_module_1.BookingSlotModule,
             additional_service_module_1.AdditionalServiceModule,

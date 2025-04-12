@@ -16,4 +16,13 @@ export declare class FacilityController {
     getDropDownInfo(ownerId: UUID): Promise<any[]>;
     getByOwner(ownerId: UUID): Promise<any[]>;
     getByFacility(facilityId: UUID): Promise<import("./facility.entity").Facility>;
+    updateName(facilityId: UUID, name: string, certificate: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
+    updateCertificate(facilityId: UUID, certificate: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
+    updateLicense(facilityId: UUID, sportId: number, license: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
 }

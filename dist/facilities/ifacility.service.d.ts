@@ -1,6 +1,7 @@
 import { UUID } from 'crypto';
 import { Facility } from './facility.entity';
 import { CreateFacilityDto } from './dtos/requests/create-facility.dto';
+import { EntityManager } from 'typeorm';
 export interface IFacilityService {
     findOneByIdAndOwnerId(facilityId: UUID, ownerId: UUID): Promise<Facility>;
     create(createFacilityDto: CreateFacilityDto, images: Express.Multer.File[], ownerId: UUID, certificate: Express.Multer.File, licenses?: Express.Multer.File[], sportIds?: number[]): Promise<{
@@ -11,6 +12,15 @@ export interface IFacilityService {
     getByOwner(ownerId: UUID): Promise<any[]>;
     getByFacility(facilityId: UUID): Promise<Facility>;
     findOneById(facilityId: UUID): Promise<Facility>;
-    approve(facility: Facility): Promise<Facility>;
-    reject(facility: Facility): Promise<Facility>;
+    findOneByIdWithTransaction(facilityId: UUID, manager: EntityManager): Promise<Facility>;
+    updateName(facilityId: UUID, name: string, certificate: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
+    findOneByIdAndOwnerWithTransaction(facilityId: UUID, manager: EntityManager, ownerId: UUID): Promise<Facility>;
+    updateCertificate(facilityId: UUID, certificate: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
+    updateLicense(facilityId: UUID, sportId: number, license: Express.Multer.File, ownerId: UUID): Promise<{
+        message: string;
+    }>;
 }

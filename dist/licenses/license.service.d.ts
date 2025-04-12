@@ -13,4 +13,5 @@ export declare class LicenseService implements ILicenseService {
     createWithTransaction(license: Express.Multer.File, facility: Facility, sportId: number, manager: EntityManager): Promise<License>;
     findOneByIdWithTransaction(facilityId: UUID, sportId: number, manager: EntityManager): Promise<License>;
     findOneById(facilityId: UUID, sportId: number): Promise<License>;
+    createNoUploadWithTransction(license: string, facility: Facility, sportId: number, manager: EntityManager): Promise<License>;
 }

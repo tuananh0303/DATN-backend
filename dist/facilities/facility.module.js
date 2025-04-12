@@ -17,7 +17,8 @@ const person_module_1 = require("../people/person.module");
 const certificate_module_1 = require("../certificates/certificate.module");
 const license_module_1 = require("../licenses/license.module");
 const cloud_uploader_module_1 = require("../cloud-uploader/cloud-uploader.module");
-const approve_module_1 = require("../approves/approve.module");
+const approval_module_1 = require("../approvals/approval.module");
+const sport_module_1 = require("../sports/sport.module");
 let FacilityModule = class FacilityModule {
 };
 exports.FacilityModule = FacilityModule;
@@ -30,7 +31,8 @@ exports.FacilityModule = FacilityModule = __decorate([
             (0, common_1.forwardRef)(() => certificate_module_1.CertificateModule),
             (0, common_1.forwardRef)(() => license_module_1.LicenseModule),
             cloud_uploader_module_1.CloudUploaderModule,
-            (0, common_1.forwardRef)(() => approve_module_1.ApproveModule),
+            (0, common_1.forwardRef)(() => approval_module_1.ApprovalModule),
+            sport_module_1.SportModule,
         ],
         providers: [facility_service_1.FacilityService],
         controllers: [facility_controller_1.FacilityController],

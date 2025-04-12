@@ -43,6 +43,15 @@ let FacilityController = class FacilityController {
     getByFacility(facilityId) {
         return this.facilityService.getByFacility(facilityId);
     }
+    updateName(facilityId, name, certificate, ownerId) {
+        return this.facilityService.updateName(facilityId, name, certificate, ownerId);
+    }
+    updateCertificate(facilityId, certificate, ownerId) {
+        return this.facilityService.updateCertificate(facilityId, certificate, ownerId);
+    }
+    updateLicense(facilityId, sportId, license, ownerId) {
+        return this.facilityService.updateLicense(facilityId, sportId, license, ownerId);
+    }
 };
 exports.FacilityController = FacilityController;
 __decorate([
@@ -107,6 +116,60 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], FacilityController.prototype, "getByFacility", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({
+        summary: 'update name of facility (role: owner)',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'name',
+        type: 'string',
+        example: 'Tên cơ sở mới',
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('certificate')),
+    (0, common_1.Put)(':facilityId/update-name'),
+    (0, auth_role_decorator_1.AuthRoles)(auth_role_enum_1.AuthRoleEnum.OWNER),
+    __param(0, (0, common_1.Param)('facilityId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Query)('name')),
+    __param(2, (0, common_1.UploadedFile)()),
+    __param(3, (0, active_person_decorator_1.ActivePerson)('sub')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object, String]),
+    __metadata("design:returntype", void 0)
+], FacilityController.prototype, "updateName", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({
+        summary: 'update certificate in facility (role: owner)',
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('certificate')),
+    (0, common_1.Put)(':facilityId/update-certificate'),
+    (0, auth_role_decorator_1.AuthRoles)(auth_role_enum_1.AuthRoleEnum.OWNER),
+    __param(0, (0, common_1.Param)('facilityId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, active_person_decorator_1.ActivePerson)('sub')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", void 0)
+], FacilityController.prototype, "updateCertificate", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({
+        summary: 'update license inn facility (role: owner)',
+    }),
+    (0, swagger_1.ApiQuery)({
+        name: 'sportId',
+        type: 'number',
+        example: 1,
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('license')),
+    (0, common_1.Put)(':facilityId/update-license'),
+    (0, auth_role_decorator_1.AuthRoles)(auth_role_enum_1.AuthRoleEnum.OWNER),
+    __param(0, (0, common_1.Param)('facilityId', common_1.ParseUUIDPipe)),
+    __param(1, (0, common_1.Query)('sportId', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.UploadedFile)()),
+    __param(3, (0, active_person_decorator_1.ActivePerson)('sub')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, Object, String]),
+    __metadata("design:returntype", void 0)
+], FacilityController.prototype, "updateLicense", null);
 exports.FacilityController = FacilityController = __decorate([
     (0, common_1.Controller)('facility'),
     __metadata("design:paramtypes", [facility_service_1.FacilityService])

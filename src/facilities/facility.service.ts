@@ -8,7 +8,7 @@ import {
 import { IFacilityService } from './ifacility.service';
 import { UUID } from 'crypto';
 import { Facility } from './facility.entity';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateFacilityDto } from './dtos/requests/create-facility.dto';
 import { PersonService } from 'src/people/person.service';
@@ -17,8 +17,9 @@ import { CertificateService } from 'src/certificates/certificate.service';
 import { LicenseService } from 'src/licenses/license.service';
 import { CloudUploaderService } from 'src/cloud-uploader/cloud-uploader.service';
 import { FacilityStatusEnum } from './enums/facility-status.enum';
-import { ApproveService } from 'src/approves/approve.service';
-import { ApproveTypeEnum } from 'src/approves/enums/approve-type.enum';
+import { ApprovalService } from 'src/approvals/approval.service';
+import { ApprovalTypeEnum } from 'src/approvals/enums/approval-type.enum';
+import { SportService } from 'src/sports/sport.service';
 
 @Injectable()
 export class FacilityService implements IFacilityService {
@@ -58,8 +59,12 @@ export class FacilityService implements IFacilityService {
     /**
      * inject ApproveService
      */
-    @Inject(forwardRef(() => ApproveService))
-    private readonly approveService: ApproveService,
+    @Inject(forwardRef(() => ApprovalService))
+    private readonly approvalService: ApprovalService,
+    /**
+     * inject SportService
+     */
+    private readonly sportService: SportService,
   ) {}
 
   public async findOneByIdAndOwnerId(
@@ -90,8 +95,6 @@ export class FacilityService implements IFacilityService {
     licenses?: Express.Multer.File[],
     sportIds?: number[],
   ): Promise<{ message: string }> {
-    let facilityId: UUID;
-
     await this.dataSource.transaction(async (manager) => {
       const owner = await this.personService.findOneByIdWithTransaction(
         ownerId,
@@ -169,12 +172,12 @@ export class FacilityService implements IFacilityService {
 
       await manager.save(newFacility);
 
-      // create notification for admin here, later
-      facilityId = newFacility.id;
-    });
-
-    await this.approveService.create(facilityId!, {
-      type: ApproveTypeEnum.FACILITY,
+      await this.approvalService.createWithTransaction(
+        newFacility.id,
+        ApprovalTypeEnum.FACILITY,
+        {},
+        manager,
+      );
     });
 
     return {
@@ -282,9 +285,16 @@ export class FacilityService implements IFacilityService {
           owner: true,
           licenses: true,
           certificate: true,
+          approvals: true,
         },
         where: {
           id: facilityId,
+        },
+        order: {
+          name: 'ASC',
+          approvals: {
+            updatedAt: 'DESC',
+          },
         },
       })
       .catch(() => {
@@ -306,23 +316,142 @@ export class FacilityService implements IFacilityService {
       });
   }
 
-  public async approve(facility: Facility): Promise<Facility> {
-    if (facility.status !== FacilityStatusEnum.PENDING) {
-      throw new BadRequestException('The facility is not pending');
-    }
-
-    facility.status = FacilityStatusEnum.ACTIVE;
-
-    return await this.facilityRepository.save(facility);
+  public async findOneByIdWithTransaction(
+    facilityId: UUID,
+    manager: EntityManager,
+  ): Promise<Facility> {
+    return manager
+      .findOneOrFail(Facility, {
+        where: {
+          id: facilityId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the facility');
+      });
   }
 
-  public async reject(facility: Facility): Promise<Facility> {
-    if (facility.status !== FacilityStatusEnum.PENDING) {
-      throw new BadRequestException('The facility is not pending');
-    }
+  public async findOneByIdAndOwnerWithTransaction(
+    facilityId: UUID,
+    manager: EntityManager,
+    ownerId: UUID,
+  ): Promise<Facility> {
+    return manager
+      .findOneOrFail(Facility, {
+        where: {
+          id: facilityId,
+          owner: {
+            id: ownerId,
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the facility');
+      });
+  }
 
-    facility.status = FacilityStatusEnum.UNACTIVE;
+  public async updateName(
+    facilityId: UUID,
+    name: string,
+    certificate: Express.Multer.File,
+    ownerId: UUID,
+  ): Promise<{ message: string }> {
+    await this.dataSource.transaction(async (manager) => {
+      const facility = await this.findOneByIdAndOwnerWithTransaction(
+        facilityId,
+        manager,
+        ownerId,
+      );
 
-    return await this.facilityRepository.save(facility);
+      if (facility.status !== FacilityStatusEnum.ACTIVE) {
+        throw new BadRequestException('The facility must be active');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { secure_url } =
+        await this.cloudUploaderService.upload(certificate);
+
+      await this.approvalService.createWithTransaction(
+        facilityId,
+        ApprovalTypeEnum.FACILITY_NAME,
+        { name, certificate: String(secure_url) },
+        manager,
+      );
+    });
+
+    return {
+      message: 'Update name successful',
+    };
+  }
+
+  public async updateCertificate(
+    facilityId: UUID,
+    certificate: Express.Multer.File,
+    ownerId: UUID,
+  ): Promise<{ message: string }> {
+    await this.dataSource.transaction(async (manager) => {
+      const facility = await this.findOneByIdAndOwnerWithTransaction(
+        facilityId,
+        manager,
+        ownerId,
+      );
+
+      if (facility.status !== FacilityStatusEnum.ACTIVE) {
+        throw new BadRequestException('The facility must be active');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { secure_url } =
+        await this.cloudUploaderService.upload(certificate);
+
+      await this.approvalService.createWithTransaction(
+        facilityId,
+        ApprovalTypeEnum.CERTIFICATE,
+        { certificate: String(secure_url) },
+        manager,
+      );
+    });
+
+    return {
+      message: 'Update certificate successful',
+    };
+  }
+
+  public async updateLicense(
+    facilityId: UUID,
+    sportId: number,
+    license: Express.Multer.File,
+    ownerId: UUID,
+  ): Promise<{ message: string }> {
+    await this.dataSource.transaction(async (manager) => {
+      const facility = await this.findOneByIdAndOwnerWithTransaction(
+        facilityId,
+        manager,
+        ownerId,
+      );
+
+      await this.sportService.findOneByIdWithTransaction(sportId, manager);
+
+      if (facility.status !== FacilityStatusEnum.ACTIVE) {
+        throw new BadRequestException('The facility must be active');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { secure_url } = await this.cloudUploaderService.upload(license);
+
+      await this.approvalService.createWithTransaction(
+        facilityId,
+        ApprovalTypeEnum.LICENSE,
+        {
+          license: String(secure_url),
+          sportId,
+        },
+        manager,
+      );
+    });
+
+    return {
+      message: 'Update license successful',
+    };
   }
 }

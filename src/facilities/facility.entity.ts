@@ -20,7 +20,7 @@ import { Certificate } from 'src/certificates/certificate.entity';
 import { License } from 'src/licenses/license.entity';
 import { Service } from 'src/services/service.entity';
 import { Voucher } from 'src/vouchers/voucher.entity';
-import { Approve } from 'src/approves/approve.entity';
+import { Approval } from 'src/approvals/approval.entity';
 
 @Entity()
 export class Facility {
@@ -149,8 +149,8 @@ export class Facility {
   @OneToMany(() => License, (license) => license.facility)
   licenses: License[];
 
-  @OneToMany(() => Approve, (approves) => approves.facility)
-  approves: Approve[];
+  @OneToMany(() => Approval, (approvals) => approvals.facility)
+  approvals: Approval[];
 
   @BeforeInsert()
   @BeforeUpdate()

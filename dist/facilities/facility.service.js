@@ -23,8 +23,9 @@ const certificate_service_1 = require("../certificates/certificate.service");
 const license_service_1 = require("../licenses/license.service");
 const cloud_uploader_service_1 = require("../cloud-uploader/cloud-uploader.service");
 const facility_status_enum_1 = require("./enums/facility-status.enum");
-const approve_service_1 = require("../approves/approve.service");
-const approve_type_enum_1 = require("../approves/enums/approve-type.enum");
+const approval_service_1 = require("../approvals/approval.service");
+const approval_type_enum_1 = require("../approvals/enums/approval-type.enum");
+const sport_service_1 = require("../sports/sport.service");
 let FacilityService = class FacilityService {
     facilityRepository;
     dataSource;
@@ -33,8 +34,9 @@ let FacilityService = class FacilityService {
     certificateService;
     licenseService;
     cloudUploaderService;
-    approveService;
-    constructor(facilityRepository, dataSource, personService, fieldGroupService, certificateService, licenseService, cloudUploaderService, approveService) {
+    approvalService;
+    sportService;
+    constructor(facilityRepository, dataSource, personService, fieldGroupService, certificateService, licenseService, cloudUploaderService, approvalService, sportService) {
         this.facilityRepository = facilityRepository;
         this.dataSource = dataSource;
         this.personService = personService;
@@ -42,7 +44,8 @@ let FacilityService = class FacilityService {
         this.certificateService = certificateService;
         this.licenseService = licenseService;
         this.cloudUploaderService = cloudUploaderService;
-        this.approveService = approveService;
+        this.approvalService = approvalService;
+        this.sportService = sportService;
     }
     async findOneByIdAndOwnerId(facilityId, ownerId) {
         return await this.facilityRepository
@@ -59,7 +62,6 @@ let FacilityService = class FacilityService {
         });
     }
     async create(createFacilityDto, images, ownerId, certificate, licenses, sportIds) {
-        let facilityId;
         await this.dataSource.transaction(async (manager) => {
             const owner = await this.personService.findOneByIdWithTransaction(ownerId, manager);
             const facility = manager.create(facility_entity_1.Facility, {
@@ -104,10 +106,7 @@ let FacilityService = class FacilityService {
             });
             newFacility.imagesUrl = iamgesUrl;
             await manager.save(newFacility);
-            facilityId = newFacility.id;
-        });
-        await this.approveService.create(facilityId, {
-            type: approve_type_enum_1.ApproveTypeEnum.FACILITY,
+            await this.approvalService.createWithTransaction(newFacility.id, approval_type_enum_1.ApprovalTypeEnum.FACILITY, {}, manager);
         });
         return {
             message: 'Create facility successful',
@@ -194,9 +193,16 @@ let FacilityService = class FacilityService {
                 owner: true,
                 licenses: true,
                 certificate: true,
+                approvals: true,
             },
             where: {
                 id: facilityId,
+            },
+            order: {
+                name: 'ASC',
+                approvals: {
+                    updatedAt: 'DESC',
+                },
             },
         })
             .catch(() => {
@@ -214,19 +220,73 @@ let FacilityService = class FacilityService {
             throw new common_1.NotFoundException('Not found the facility');
         });
     }
-    async approve(facility) {
-        if (facility.status !== facility_status_enum_1.FacilityStatusEnum.PENDING) {
-            throw new common_1.BadRequestException('The facility is not pending');
-        }
-        facility.status = facility_status_enum_1.FacilityStatusEnum.ACTIVE;
-        return await this.facilityRepository.save(facility);
+    async findOneByIdWithTransaction(facilityId, manager) {
+        return manager
+            .findOneOrFail(facility_entity_1.Facility, {
+            where: {
+                id: facilityId,
+            },
+        })
+            .catch(() => {
+            throw new common_1.NotFoundException('Not found the facility');
+        });
     }
-    async reject(facility) {
-        if (facility.status !== facility_status_enum_1.FacilityStatusEnum.PENDING) {
-            throw new common_1.BadRequestException('The facility is not pending');
-        }
-        facility.status = facility_status_enum_1.FacilityStatusEnum.UNACTIVE;
-        return await this.facilityRepository.save(facility);
+    async findOneByIdAndOwnerWithTransaction(facilityId, manager, ownerId) {
+        return manager
+            .findOneOrFail(facility_entity_1.Facility, {
+            where: {
+                id: facilityId,
+                owner: {
+                    id: ownerId,
+                },
+            },
+        })
+            .catch(() => {
+            throw new common_1.NotFoundException('Not found the facility');
+        });
+    }
+    async updateName(facilityId, name, certificate, ownerId) {
+        await this.dataSource.transaction(async (manager) => {
+            const facility = await this.findOneByIdAndOwnerWithTransaction(facilityId, manager, ownerId);
+            if (facility.status !== facility_status_enum_1.FacilityStatusEnum.ACTIVE) {
+                throw new common_1.BadRequestException('The facility must be active');
+            }
+            const { secure_url } = await this.cloudUploaderService.upload(certificate);
+            await this.approvalService.createWithTransaction(facilityId, approval_type_enum_1.ApprovalTypeEnum.FACILITY_NAME, { name, certificate: String(secure_url) }, manager);
+        });
+        return {
+            message: 'Update name successful',
+        };
+    }
+    async updateCertificate(facilityId, certificate, ownerId) {
+        await this.dataSource.transaction(async (manager) => {
+            const facility = await this.findOneByIdAndOwnerWithTransaction(facilityId, manager, ownerId);
+            if (facility.status !== facility_status_enum_1.FacilityStatusEnum.ACTIVE) {
+                throw new common_1.BadRequestException('The facility must be active');
+            }
+            const { secure_url } = await this.cloudUploaderService.upload(certificate);
+            await this.approvalService.createWithTransaction(facilityId, approval_type_enum_1.ApprovalTypeEnum.CERTIFICATE, { certificate: String(secure_url) }, manager);
+        });
+        return {
+            message: 'Update certificate successful',
+        };
+    }
+    async updateLicense(facilityId, sportId, license, ownerId) {
+        await this.dataSource.transaction(async (manager) => {
+            const facility = await this.findOneByIdAndOwnerWithTransaction(facilityId, manager, ownerId);
+            await this.sportService.findOneByIdWithTransaction(sportId, manager);
+            if (facility.status !== facility_status_enum_1.FacilityStatusEnum.ACTIVE) {
+                throw new common_1.BadRequestException('The facility must be active');
+            }
+            const { secure_url } = await this.cloudUploaderService.upload(license);
+            await this.approvalService.createWithTransaction(facilityId, approval_type_enum_1.ApprovalTypeEnum.LICENSE, {
+                license: String(secure_url),
+                sportId,
+            }, manager);
+        });
+        return {
+            message: 'Update license successful',
+        };
     }
 };
 exports.FacilityService = FacilityService;
@@ -236,7 +296,7 @@ exports.FacilityService = FacilityService = __decorate([
     __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => field_group_service_1.FieldGroupService))),
     __param(4, (0, common_1.Inject)((0, common_1.forwardRef)(() => certificate_service_1.CertificateService))),
     __param(5, (0, common_1.Inject)((0, common_1.forwardRef)(() => license_service_1.LicenseService))),
-    __param(7, (0, common_1.Inject)((0, common_1.forwardRef)(() => approve_service_1.ApproveService))),
+    __param(7, (0, common_1.Inject)((0, common_1.forwardRef)(() => approval_service_1.ApprovalService))),
     __metadata("design:paramtypes", [typeorm_1.Repository,
         typeorm_1.DataSource,
         person_service_1.PersonService,
@@ -244,6 +304,7 @@ exports.FacilityService = FacilityService = __decorate([
         certificate_service_1.CertificateService,
         license_service_1.LicenseService,
         cloud_uploader_service_1.CloudUploaderService,
-        approve_service_1.ApproveService])
+        approval_service_1.ApprovalService,
+        sport_service_1.SportService])
 ], FacilityService);
 //# sourceMappingURL=facility.service.js.map

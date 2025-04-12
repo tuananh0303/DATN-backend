@@ -8,7 +8,8 @@ import { PersonModule } from 'src/people/person.module';
 import { CertificateModule } from 'src/certificates/certificate.module';
 import { LicenseModule } from 'src/licenses/license.module';
 import { CloudUploaderModule } from 'src/cloud-uploader/cloud-uploader.module';
-import { ApproveModule } from 'src/approves/approve.module';
+import { ApprovalModule } from 'src/approvals/approval.module';
+import { SportModule } from 'src/sports/sport.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { ApproveModule } from 'src/approves/approve.module';
     forwardRef(() => CertificateModule),
     forwardRef(() => LicenseModule),
     CloudUploaderModule,
-    forwardRef(() => ApproveModule),
+    forwardRef(() => ApprovalModule),
+    SportModule,
   ],
   providers: [FacilityService],
   controllers: [FacilityController],

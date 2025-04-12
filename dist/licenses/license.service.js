@@ -62,6 +62,15 @@ let LicenseService = class LicenseService {
             throw new common_1.NotFoundException(`Not found license with sport ${sportId} of facility ${facilityId}`);
         });
     }
+    async createNoUploadWithTransction(license, facility, sportId, manager) {
+        const sport = await this.sportService.findOneByIdWithTransaction(sportId, manager);
+        const newLicense = manager.create(license_entity_1.License, {
+            facility,
+            verified: license,
+            sport,
+        });
+        return await manager.save(newLicense);
+    }
 };
 exports.LicenseService = LicenseService;
 exports.LicenseService = LicenseService = __decorate([

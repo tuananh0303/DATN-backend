@@ -85,4 +85,24 @@ export class LicenseService implements ILicenseService {
         );
       });
   }
+
+  public async createNoUploadWithTransction(
+    license: string,
+    facility: Facility,
+    sportId: number,
+    manager: EntityManager,
+  ): Promise<License> {
+    const sport = await this.sportService.findOneByIdWithTransaction(
+      sportId,
+      manager,
+    );
+
+    const newLicense = manager.create(License, {
+      facility,
+      verified: license,
+      sport,
+    });
+
+    return await manager.save(newLicense);
+  }
 }
