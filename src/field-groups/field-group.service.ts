@@ -328,4 +328,22 @@ export class FieldGroupService implements IFieldGroupService {
 
     return result;
   }
+
+  public async isExistingFieldGroupName(
+    fieldGroupName: string,
+  ): Promise<{ message: string }> {
+    const existing = await this.fieldGroupRepository.exists({
+      where: {
+        name: fieldGroupName,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Field group name is existing');
+    }
+
+    return {
+      message: 'Field group name is not existing',
+    };
+  }
 }

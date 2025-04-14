@@ -37,4 +37,8 @@ export interface IFieldGroupService {
     facilityId: UUID,
     getAvailableFieldInFacilityDto: GetAvailableFieldInFacilityDto,
   ): Promise<GetAvailableFieldInFacilityRO[]>;
+
+  isExistingFieldGroupName(
+    fieldGroupName: string,
+  ): Promise<{ message: string }>;
 }

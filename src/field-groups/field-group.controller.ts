@@ -6,10 +6,12 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { FieldGroupService } from './field-group.service';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
 import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
 import { CreateManyFieldGroupsDto } from './dtos/request/craete-many-field-groups.dto';
@@ -95,5 +97,19 @@ export class FieldGroupController {
       facilityId,
       getAvailableFieldInFacilityDto,
     );
+  }
+
+  @ApiOperation({
+    summary: 'existing field group name (role: none)',
+  })
+  @ApiQuery({
+    name: 'name',
+    type: 'string',
+    example: 'field group name',
+  })
+  @Post('existing-field-group-name')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public isExistingFieldGroupName(@Query('name') fieldGroupName: string) {
+    return this.fieldGroupService.isExistingFieldGroupName(fieldGroupName);
   }
 }
