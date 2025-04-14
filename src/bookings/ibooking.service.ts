@@ -27,4 +27,6 @@ export interface IBookingService {
     updateAdditionalServiceDto: UpdateAdditionalServicesDto,
     playerId: UUID,
   ): Promise<Booking>;
+
+  findOneById(bookingId: UUID, relations?: string[]): Promise<Booking>;
 }

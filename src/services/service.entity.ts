@@ -15,6 +15,7 @@ import {
 } from 'typeorm';
 import { ServiceTypeEnum } from './enums/service-type.enum';
 import { AdditionalService } from 'src/additional-services/additional-service.entity';
+import { UnitEnum } from './enums/unit.enum';
 
 @Entity()
 @Unique(['name', 'facility'])
@@ -63,11 +64,11 @@ export class Service {
   bookedCount: number;
 
   @Column({
-    type: 'varchar',
-    length: 255,
+    type: 'enum',
+    enum: UnitEnum,
     nullable: false,
   })
-  unit: string;
+  unit: UnitEnum;
 
   @OneToOne(() => Sport, {
     onDelete: 'RESTRICT',

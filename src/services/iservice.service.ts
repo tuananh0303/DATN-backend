@@ -5,6 +5,7 @@ import { Facility } from 'src/facilities/facility.entity';
 import { EntityManager } from 'typeorm';
 import { Service } from './service.entity';
 import { UpdateServiceDto } from './dtos/requests/update-service.dto';
+import { GetAvailableFieldInFacilityDto } from 'src/field-groups/dtos/request/get-available-field-in-facility.dto';
 
 export interface IServiceService {
   createMany(
@@ -35,4 +36,11 @@ export interface IServiceService {
     manager: EntityManager,
     relations?: string[],
   ): Promise<Service>;
+
+  getAvailableServiceInFacility(
+    facilityId: UUID,
+    getAvailableServiceInFacilityDto: GetAvailableFieldInFacilityDto,
+  ): Promise<any>;
+
+  addBookedCound(bookingId: UUID): Promise<any>;
 }

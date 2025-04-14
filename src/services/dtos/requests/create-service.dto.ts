@@ -10,6 +10,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ServiceTypeEnum } from '../../enums/service-type.enum';
+import { UnitEnum } from 'src/services/enums/unit.enum';
 
 export class CreateServiceDto {
   @ApiProperty({
@@ -59,12 +60,12 @@ export class CreateServiceDto {
 
   @ApiProperty({
     type: 'string',
-    example: 'date',
+    enum: UnitEnum,
+    example: UnitEnum.TIME,
   })
-  @IsString()
+  @IsEnum(UnitEnum)
   @IsNotEmpty()
-  @MinLength(2)
-  unit: string;
+  unit: UnitEnum;
 
   @ApiProperty({
     type: 'string',

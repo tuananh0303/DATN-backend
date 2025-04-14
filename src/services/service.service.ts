@@ -1,12 +1,19 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { IServiceService } from './iservice.service';
 import { UUID } from 'crypto';
 import { CreateManyServicesDto } from './dtos/requests/create-many-services.dto';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { FacilityService } from 'src/facilities/facility.service';
 import { Facility } from 'src/facilities/facility.entity';
 import { CreateServiceDto } from './dtos/requests/create-service.dto';
@@ -16,6 +23,8 @@ import { FacilityStatusEnum } from 'src/facilities/enums/facility-status.enum';
 import { LicenseService } from 'src/licenses/license.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateServiceDto } from './dtos/requests/update-service.dto';
+import { GetAvailableFieldInFacilityDto } from 'src/field-groups/dtos/request/get-available-field-in-facility.dto';
+import { BookingService } from 'src/bookings/booking.service';
 
 @Injectable()
 export class ServiceService implements IServiceService {
@@ -41,6 +50,11 @@ export class ServiceService implements IServiceService {
      */
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
+    /**
+     * inject BookingService
+     */
+    @Inject(forwardRef(() => BookingService))
+    private readonly bookingService: BookingService,
   ) {}
 
   public async createMany(
@@ -51,6 +65,10 @@ export class ServiceService implements IServiceService {
       createManyServicesDto.facilityId,
       ownerId,
     );
+
+    if (facility.status !== FacilityStatusEnum.ACTIVE) {
+      throw new BadRequestException('The facility must be active');
+    }
 
     await this.dataSource.transaction(async (manager) => {
       for (const service of createManyServicesDto.services) {
@@ -157,11 +175,35 @@ export class ServiceService implements IServiceService {
     serviceId: number,
     ownerId: UUID,
   ): Promise<{ message: string }> {
-    const service = await this.findOneByIdAndOwner(serviceId, ownerId);
+    const now = new Date();
 
+    const service = await this.serviceRepository.findOne({
+      where: {
+        id: serviceId,
+        facility: {
+          owner: {
+            id: ownerId,
+          },
+        },
+        additionalServices: {
+          booking: {
+            bookingSlots: {
+              date: MoreThanOrEqual(now),
+            },
+          },
+        },
+      },
+    });
+
+    if (service) {
+      throw new BadRequestException(
+        'The service have many booking in the future',
+      );
+    }
     // must be check booking before delete, later
+
     try {
-      await this.serviceRepository.remove(service);
+      await this.serviceRepository.delete(serviceId);
     } catch {
       throw new BadRequestException(
         'An error occurred when delete the service',
@@ -225,5 +267,26 @@ export class ServiceService implements IServiceService {
       .catch(() => {
         throw new NotFoundException(`Not found service by id: ${serviceId}`);
       });
+  }
+
+  public async getAvailableServiceInFacility(
+    facilityId: UUID,
+    getAvailableServiceInFacilityDto: GetAvailableFieldInFacilityDto,
+  ): Promise<any> {}
+
+  public async addBookedCound(bookingId: UUID): Promise<any> {
+    const booking = await this.bookingService.findOneById(bookingId, [
+      'bookingSlots',
+      'additionalService.service',
+    ]);
+
+    const time = booking.bookingSlots.length;
+
+    for (const additionalService of booking.additionalServices) {
+      const service = additionalService.service;
+      service.bookedCount += additionalService.quantity * time;
+
+      await this.serviceRepository.save(service);
+    }
   }
 }

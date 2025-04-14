@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import { PaymentStatusEnum } from '../enums/payment-status.enum';
+import { ServiceService } from 'src/services/service.service';
 
 @Injectable()
 export class VnpayProvider {
@@ -32,6 +35,11 @@ export class VnpayProvider {
      */
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
+    /**
+     * inject ServiceService
+     */
+    @Inject(forwardRef(() => ServiceService))
+    private readonly serviceService: ServiceService,
   ) {}
 
   public payment(payment: Payment, req: Request): { paymentUrl: string } {
@@ -94,6 +102,9 @@ export class VnpayProvider {
 
     const payment = await this.paymentRepository
       .findOneOrFail({
+        relations: {
+          booking: true,
+        },
         where: {
           id: verify.vnp_TxnRef as UUID,
         },
@@ -115,6 +126,8 @@ export class VnpayProvider {
     payment.status = PaymentStatusEnum.PAID;
 
     await this.paymentRepository.save(payment);
+
+    await this.serviceService.addBookedCound(payment.booking.id);
 
     return {
       message: 'Payment successful',

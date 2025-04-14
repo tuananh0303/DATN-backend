@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -19,7 +19,7 @@ import { AdditionalServiceModule } from 'src/additional-services/additional-serv
     SportModule,
     BookingSlotModule,
     PaymentModule,
-    ServiceModule,
+    forwardRef(() => ServiceModule),
     AdditionalServiceModule,
   ],
   controllers: [BookingController],

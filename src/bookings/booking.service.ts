@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -33,6 +35,7 @@ import { UpdateAdditionalServicesDto } from './dtos/requests/update-additional-s
 import { AdditionalService } from 'src/additional-services/additional-service.entity';
 import { ServiceService } from 'src/services/service.service';
 import { AdditionalServiceService } from 'src/additional-services/additional-service.service';
+import { UnitEnum } from 'src/services/enums/unit.enum';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -70,6 +73,7 @@ export class BookingService implements IBookingService {
     /**
      * inject ServiceService
      */
+    @Inject(forwardRef(() => ServiceService))
     private readonly serviceService: ServiceService,
     /**
      * inject AdditionalService
@@ -180,7 +184,6 @@ export class BookingService implements IBookingService {
         );
 
         // create bookingSlot
-        console.log('-------------------booking: ', booking);
         const newBookingSlot =
           await this.bookingSlotService.createWithTransaction(
             field,
@@ -253,7 +256,6 @@ export class BookingService implements IBookingService {
     endTime: string,
     manager: EntityManager,
   ) {
-    console.log('----------------------------------------------');
     const overlapBooking = await manager.findOne(Booking, {
       where: [
         {
@@ -295,8 +297,6 @@ export class BookingService implements IBookingService {
         },
       ],
     });
-
-    console.log('----------------------------------------------');
 
     if (overlapBooking) {
       throw new BadRequestException(
@@ -476,6 +476,8 @@ export class BookingService implements IBookingService {
       throw new BadRequestException('The booking must be draft');
     }
 
+    const playTime = duration(booking.startTime, booking.endTime);
+
     return await this.dataSource.transaction<Booking>(async (manager) => {
       // remove old additional service
       for (const additionalService of booking.additionalServices) {
@@ -554,10 +556,20 @@ export class BookingService implements IBookingService {
           }
         }
 
-        servicePrice +=
-          service.price *
-          additionalService.amount *
-          booking.bookingSlots.length;
+        if (service.unit === UnitEnum.QUANTITY) {
+          // caculator follow quantity
+
+          servicePrice +=
+            service.price *
+            additionalService.amount *
+            booking.bookingSlots.length;
+        } else {
+          servicePrice +=
+            service.price *
+            additionalService.amount *
+            booking.bookingSlots.length *
+            playTime;
+        }
 
         const newAdditionalService =
           await this.additionalServiceService.createWithTransaction(
@@ -579,5 +591,21 @@ export class BookingService implements IBookingService {
 
       return booking;
     });
+  }
+
+  public async findOneById(
+    bookingId: UUID,
+    relations?: string[],
+  ): Promise<Booking> {
+    return this.bookingRepository
+      .findOneOrFail({
+        relations,
+        where: {
+          id: bookingId,
+        },
+      })
+      .catch(() => {
+        throw new BadRequestException(`Not found the booking ${bookingId}`);
+      });
   }
 }

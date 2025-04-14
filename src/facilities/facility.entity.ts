@@ -9,6 +9,7 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { FacilityStatusEnum } from './enums/facility-status.enum';
@@ -23,6 +24,7 @@ import { Voucher } from 'src/vouchers/voucher.entity';
 import { Approval } from 'src/approvals/approval.entity';
 
 @Entity()
+@Unique(['name', 'id'])
 export class Facility {
   @PrimaryGeneratedColumn('uuid')
   id: UUID;
@@ -30,7 +32,6 @@ export class Facility {
   @Column({
     type: 'varchar',
     length: 255,
-    unique: true,
     nullable: false,
   })
   name: string;

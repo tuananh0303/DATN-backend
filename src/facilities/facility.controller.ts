@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -17,6 +18,7 @@ import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import {
   FileFieldsInterceptor,
   FileInterceptor,
+  FilesInterceptor,
 } from '@nestjs/platform-express';
 import { CreateFacilityInterceptor } from './interceptors/create-facility.interceptor';
 import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
@@ -25,6 +27,7 @@ import { CreateFacilityDto } from './dtos/requests/create-facility.dto';
 import { SportLicensesDto } from './dtos/requests/sport-licenses.dto';
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { UUID } from 'crypto';
+import { DeleteImageDto } from './dtos/requests/delete-image.dto';
 
 @Controller('facility')
 export class FacilityController {
@@ -94,6 +97,15 @@ export class FacilityController {
   @AuthRoles(AuthRoleEnum.NONE)
   public getByOwner(@Param('ownerId', ParseUUIDPipe) ownerId: UUID) {
     return this.facilityService.getByOwner(ownerId);
+  }
+
+  @ApiOperation({
+    summary: 'get all existing name of owner (role: onwer)',
+  })
+  @Get('existing-name')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  public getExistingFacilityName(@ActivePerson('sub') ownerId: UUID) {
+    return this.facilityService.getExistingFacilityName(ownerId);
   }
 
   @ApiOperation({
@@ -174,16 +186,28 @@ export class FacilityController {
   }
 
   @ApiOperation({
-    summary: 'valid facility name (role: none)',
+    summary: 'add many image into facility (role: owner)',
   })
-  @ApiQuery({
-    name: 'name',
-    type: 'string',
-    example: 'facility name',
+  @UseInterceptors(FilesInterceptor('images'))
+  @Put(':facilityId/add-images')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  addImages(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @UploadedFiles() images: Express.Multer.File[],
+    @ActivePerson('sub') ownerId: UUID,
+  ) {
+    return this.facilityService.addImages(facilityId, images, ownerId);
+  }
+
+  @ApiOperation({
+    summary: 'delete the image (role: owner)',
   })
-  @Post('existing-facility-name')
-  @AuthRoles(AuthRoleEnum.NONE)
-  public isExistingFacilityName(@Query('name') facilityName: string) {
-    return this.facilityService.isExistingFacilityName(facilityName);
+  @Delete('delete-image')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  deleteImage(
+    @Body() deleteImageDto: DeleteImageDto,
+    @ActivePerson('sub') ownerId: UUID,
+  ) {
+    return this.facilityService.deleteImage(deleteImageDto, ownerId);
   }
 }

@@ -20,6 +20,7 @@ import { FacilityStatusEnum } from './enums/facility-status.enum';
 import { ApprovalService } from 'src/approvals/approval.service';
 import { ApprovalTypeEnum } from 'src/approvals/enums/approval-type.enum';
 import { SportService } from 'src/sports/sport.service';
+import { DeleteImageDto } from './dtos/requests/delete-image.dto';
 
 @Injectable()
 export class FacilityService implements IFacilityService {
@@ -455,21 +456,89 @@ export class FacilityService implements IFacilityService {
     };
   }
 
-  public async isExistingFacilityName(
-    facilityName: string,
-  ): Promise<{ message: string }> {
-    const facility = await this.facilityRepository.exists({
+  public async getExistingFacilityName(ownerId: UUID): Promise<string[]> {
+    const facilities = await this.facilityRepository.find({
       where: {
-        name: facilityName,
+        owner: {
+          id: ownerId,
+        },
       },
     });
 
-    if (facility) {
-      throw new BadRequestException('Facility name is existing');
+    return facilities.map((facility) => facility.name);
+  }
+
+  public async addImages(
+    facilityId: UUID,
+    images: Express.Multer.File[],
+    ownerId: UUID,
+  ): Promise<{ message: string }> {
+    const facility = await this.facilityRepository
+      .findOneOrFail({
+        where: {
+          id: facilityId,
+          owner: {
+            id: ownerId,
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the facility');
+      });
+
+    for (const image of images) {
+      if (!image.mimetype.includes('image')) {
+        throw new BadRequestException('The files must be image type');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { secure_url } = await this.cloudUploaderService.upload(image);
+
+      facility.imagesUrl?.push(String(secure_url));
+    }
+
+    try {
+      await this.facilityRepository.save(facility);
+    } catch {
+      throw new BadRequestException(
+        'An error occurred when add image into facility',
+      );
     }
 
     return {
-      message: 'Facility name is not exist',
+      message: 'Add image into facility successful',
+    };
+  }
+
+  public async deleteImage(
+    deleteImageDto: DeleteImageDto,
+    ownerId: UUID,
+  ): Promise<{ message: string }> {
+    const facility = await this.facilityRepository
+      .findOneOrFail({
+        where: {
+          id: deleteImageDto.facilityId,
+          owner: {
+            id: ownerId,
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the facility');
+      });
+
+    facility.imagesUrl = facility.imagesUrl?.filter(
+      (imageUrl) => imageUrl !== deleteImageDto.imageUrl,
+    );
+
+    try {
+      await this.facilityRepository.save(facility);
+    } catch {
+      throw new BadRequestException('Delete the image in facility');
+    }
+
+    return {
+      message: 'Delete image in facility successful',
     };
   }
 }
