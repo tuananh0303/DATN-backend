@@ -194,6 +194,9 @@ export class ApprovalService implements IApprovalService {
         },
         sport: true,
       },
+      order: {
+        createdAt: 'DESC',
+      },
     });
   }
 

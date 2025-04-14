@@ -142,4 +142,21 @@ export class FieldService implements IFieldService {
       message: 'Delete field successful',
     };
   }
+
+  public async findOneByIdWithTransaction(
+    fieldId: number,
+    manager: EntityManager,
+    relations?: string[],
+  ): Promise<Field> {
+    return await manager
+      .findOneOrFail(Field, {
+        relations,
+        where: {
+          id: fieldId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException(`Not found field id: ${fieldId}`);
+      });
+  }
 }

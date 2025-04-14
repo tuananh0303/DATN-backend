@@ -72,4 +72,14 @@ export class ServiceController {
   public getByFacility(@Param('facilityId', ParseUUIDPipe) facilityId: UUID) {
     return this.serviceService.getByFacility(facilityId);
   }
+
+  @ApiOperation({
+    summary: 'get available service in facility (role: none)',
+  })
+  @Get(':facilityId/available-service-in-facility')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getAvailableServiceInFacility(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    // @Body() getAvailableServiceInFacilityDto:
+  ) {}
 }

@@ -209,4 +209,21 @@ export class ServiceService implements IServiceService {
       bookedCount: 0,
     }));
   }
+
+  public async findOneByIdWithTransaction(
+    serviceId: number,
+    manager: EntityManager,
+    relations?: string[],
+  ): Promise<Service> {
+    return await manager
+      .findOneOrFail(Service, {
+        relations,
+        where: {
+          id: serviceId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException(`Not found service by id: ${serviceId}`);
+      });
+  }
 }

@@ -1,10 +1,30 @@
 import { UUID } from 'crypto';
 import { Booking } from './booking.entity';
 import { CreateDraftBookingDto } from './dtos/requests/create-draft-booking.dto';
+import { UpdateBookingSlotDto } from './dtos/requests/update-booking-slot.dto';
+import { UpdateAdditionalServicesDto } from './dtos/requests/update-additional-services.dto';
 
 export interface IBookingService {
   createDraft(
     createDraftBookingDto: CreateDraftBookingDto,
+    playerId: UUID,
+  ): Promise<Booking>;
+
+  updateBookingSlot(
+    bookingId: UUID,
+    updateBookingSlotDto: UpdateBookingSlotDto,
+    playerId: UUID,
+  ): Promise<Booking>;
+
+  findOneByIdAndPlayer(
+    bookingId: UUID,
+    playerId: UUID,
+    relations?: string[],
+  ): Promise<Booking>;
+
+  updateAdditionalServices(
+    bookingId: UUID,
+    updateAdditionalServiceDto: UpdateAdditionalServicesDto,
     playerId: UUID,
   ): Promise<Booking>;
 }

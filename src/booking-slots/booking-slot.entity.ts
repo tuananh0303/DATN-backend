@@ -4,6 +4,7 @@ import {
   AfterLoad,
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -21,12 +22,14 @@ export class BookingSlot {
   @ManyToOne(() => Field, (field) => field.bookingSlots, {
     nullable: false,
   })
+  @JoinColumn()
   field: Field;
 
   @ManyToOne(() => Booking, (booking) => booking.bookingSlots, {
     onDelete: 'CASCADE',
     nullable: false,
   })
+  @JoinColumn()
   booking: Booking;
 
   @AfterLoad()

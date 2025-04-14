@@ -28,7 +28,7 @@ export class CreateDraftBookingDto {
   endTime: string;
 
   @ApiProperty({
-    type: CreateBookingSlotDto,
+    type: [CreateBookingSlotDto],
   })
   @IsNotEmpty()
   @IsArray()

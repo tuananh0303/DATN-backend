@@ -156,4 +156,20 @@ export class VoucherService implements IVoucherService {
       },
     });
   }
+
+  public async findOneById(
+    voucherId: number,
+    relations?: string[],
+  ): Promise<Voucher> {
+    return this.voucherRepository
+      .findOneOrFail({
+        relations,
+        where: {
+          id: voucherId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the voucher');
+      });
+  }
 }

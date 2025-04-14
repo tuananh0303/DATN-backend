@@ -5,6 +5,8 @@ import { CreateFieldGroupDto } from './dtos/request/create-field-group.dto';
 import { EntityManager } from 'typeorm';
 import { Facility } from 'src/facilities/facility.entity';
 import { UpdateFieldGroupDto } from './dtos/request/update-field-group.dto';
+import { GetAvailableFieldInFacilityDto } from './dtos/request/get-available-field-in-facility.dto';
+import { GetAvailableFieldInFacilityRO } from './dtos/response/get-available-field-in-facility.ro';
 
 export interface IFieldGroupService {
   findOneByIdAndOwnerId(fieldGroupId: UUID, ownerId: UUID): Promise<FieldGroup>;
@@ -30,4 +32,9 @@ export interface IFieldGroupService {
   delete(fieldGroupId: UUID, ownerId: UUID): Promise<{ message: string }>;
 
   getByFacilityId(facilityId: UUID): Promise<FieldGroup[]>;
+
+  getAvailabeFieldInFacility(
+    facilityId: UUID,
+    getAvailableFieldInFacilityDto: GetAvailableFieldInFacilityDto,
+  ): Promise<GetAvailableFieldInFacilityRO[]>;
 }

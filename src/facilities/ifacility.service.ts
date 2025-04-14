@@ -55,4 +55,6 @@ export interface IFacilityService {
     license: Express.Multer.File,
     ownerId: UUID,
   ): Promise<{ message: string }>;
+
+  isExistingFacilityName(facilityName: string): Promise<{ message: string }>;
 }

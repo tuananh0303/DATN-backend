@@ -172,4 +172,18 @@ export class FacilityController {
       ownerId,
     );
   }
+
+  @ApiOperation({
+    summary: 'valid facility name (role: none)',
+  })
+  @ApiQuery({
+    name: 'name',
+    type: 'string',
+    example: 'facility name',
+  })
+  @Post('existing-facility-name')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public isExistingFacilityName(@Query('name') facilityName: string) {
+    return this.facilityService.isExistingFacilityName(facilityName);
+  }
 }

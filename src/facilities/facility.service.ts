@@ -454,4 +454,22 @@ export class FacilityService implements IFacilityService {
       message: 'Update license successful',
     };
   }
+
+  public async isExistingFacilityName(
+    facilityName: string,
+  ): Promise<{ message: string }> {
+    const facility = await this.facilityRepository.exists({
+      where: {
+        name: facilityName,
+      },
+    });
+
+    if (facility) {
+      throw new BadRequestException('Facility name is existing');
+    }
+
+    return {
+      message: 'Facility name is not exist',
+    };
+  }
 }

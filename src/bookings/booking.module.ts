@@ -6,6 +6,10 @@ import { Booking } from './booking.entity';
 import { FieldModule } from 'src/fields/field.module';
 import { PersonModule } from 'src/people/person.module';
 import { SportModule } from 'src/sports/sport.module';
+import { BookingSlotModule } from 'src/booking-slots/booking-slot.module';
+import { PaymentModule } from 'src/payments/payment.module';
+import { ServiceModule } from 'src/services/service.module';
+import { AdditionalServiceModule } from 'src/additional-services/additional-service.module';
 
 @Module({
   imports: [
@@ -13,6 +17,10 @@ import { SportModule } from 'src/sports/sport.module';
     FieldModule,
     PersonModule,
     SportModule,
+    BookingSlotModule,
+    PaymentModule,
+    ServiceModule,
+    AdditionalServiceModule,
   ],
   controllers: [BookingController],
   providers: [BookingService],

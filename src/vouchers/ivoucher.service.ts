@@ -20,4 +20,6 @@ export interface IVoucherService {
   ): Promise<{ message: string }>;
 
   getByFacility(facilityId: UUID): Promise<Voucher[]>;
+
+  findOneById(voucherId: number, relations?: string[]): Promise<Voucher>;
 }

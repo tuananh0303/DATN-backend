@@ -16,6 +16,7 @@ import { CreateManyFieldGroupsDto } from './dtos/request/craete-many-field-group
 import { UUID } from 'crypto';
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { UpdateFieldGroupDto } from './dtos/request/update-field-group.dto';
+import { GetAvailableFieldInFacilityDto } from './dtos/request/get-available-field-in-facility.dto';
 
 @Controller('field-group')
 export class FieldGroupController {
@@ -79,5 +80,20 @@ export class FieldGroupController {
   @AuthRoles(AuthRoleEnum.NONE)
   public getByFacilityId(@Param('facilityId', ParseUUIDPipe) facilityId: UUID) {
     return this.fieldGroupService.getByFacilityId(facilityId);
+  }
+
+  @ApiOperation({
+    summary: 'get all available fields in facility (role: none)',
+  })
+  @Get(':facilityId/available-field-in-facility')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getAvailableFieldInFacility(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @Body() getAvailableFieldInFacilityDto: GetAvailableFieldInFacilityDto,
+  ) {
+    return this.fieldGroupService.getAvailabeFieldInFacility(
+      facilityId,
+      getAvailableFieldInFacilityDto,
+    );
   }
 }

@@ -30,5 +30,9 @@ export interface IFieldService {
 
   findOneById(fieldId: number, relations?: string[]): Promise<Field>;
 
-  // findOneByIdWithTransation()
+  findOneByIdWithTransaction(
+    fieldId: number,
+    manager: EntityManager,
+    relations?: string[],
+  ): Promise<Field>;
 }

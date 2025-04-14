@@ -1,8 +1,20 @@
-import { Body, Controller } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { CreateDraftBookingDto } from './dtos/requests/create-draft-booking.dto';
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { UUID } from 'crypto';
+import { ApiOperation } from '@nestjs/swagger';
+import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
+import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
+import { UpdateBookingSlotDto } from './dtos/requests/update-booking-slot.dto';
+import { UpdateAdditionalServicesDto } from './dtos/requests/update-additional-services.dto';
 
 @Controller('booking')
 export class BookingController {
@@ -13,10 +25,49 @@ export class BookingController {
     private readonly bookingService: BookingService,
   ) {}
 
+  @ApiOperation({
+    summary: 'create draft booking (role: palyer)',
+  })
+  @Post('create-draft')
+  @AuthRoles(AuthRoleEnum.PLAYER)
   public createDraft(
     @Body() createDraftBookingDto: CreateDraftBookingDto,
     @ActivePerson('sub') playerId: UUID,
   ) {
     return this.bookingService.createDraft(createDraftBookingDto, playerId);
+  }
+
+  @ApiOperation({
+    summary: 'update fields (roles: player)',
+  })
+  @Put(':bookingId/update-booking-slot')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public updateBookingSlot(
+    @Param('bookingId', ParseUUIDPipe) bookingId: UUID,
+    @Body() updateBookingSlotDto: UpdateBookingSlotDto,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.bookingService.updateBookingSlot(
+      bookingId,
+      updateBookingSlotDto,
+      playerId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'update additional service (roles: player)',
+  })
+  @Put(':bookingId/update-additional-services')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public updateService(
+    @Param('bookingId', ParseUUIDPipe) bookingId: UUID,
+    @Body() updateAdditionServices: UpdateAdditionalServicesDto,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.bookingService.updateAdditionalServices(
+      bookingId,
+      updateAdditionServices,
+      playerId,
+    );
   }
 }

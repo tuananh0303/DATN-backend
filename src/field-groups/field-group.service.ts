@@ -8,7 +8,15 @@ import {
 import { IFieldGroupService } from './ifield-group.service';
 import { UUID } from 'crypto';
 import { FieldGroup } from './field-group.entity';
-import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  EntityManager,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateManyFieldGroupsDto } from './dtos/request/craete-many-field-groups.dto';
 import { FieldService } from 'src/fields/field.service';
@@ -18,6 +26,8 @@ import { Sport } from 'src/sports/sport.entity';
 import { Facility } from 'src/facilities/facility.entity';
 import { UpdateFieldGroupDto } from './dtos/request/update-field-group.dto';
 import { SportService } from 'src/sports/sport.service';
+import { GetAvailableFieldInFacilityDto } from './dtos/request/get-available-field-in-facility.dto';
+import { GetAvailableFieldInFacilityRO } from './dtos/response/get-available-field-in-facility.ro';
 
 @Injectable()
 export class FieldGroupService implements IFieldGroupService {
@@ -215,5 +225,107 @@ export class FieldGroupService implements IFieldGroupService {
         },
       },
     });
+  }
+
+  public async getAvailabeFieldInFacility(
+    facilityId: UUID,
+    getAvailableFieldInFacilityDto: GetAvailableFieldInFacilityDto,
+  ): Promise<GetAvailableFieldInFacilityRO[]> {
+    // get all field group
+    const fieldGroups = await this.fieldGroupRepository.find({
+      relations: {
+        fields: true,
+        sports: true,
+      },
+      where: {
+        facility: {
+          id: facilityId,
+        },
+        sports: {
+          id: getAvailableFieldInFacilityDto.sportId,
+        },
+      },
+      order: {
+        fields: {
+          fieldGroup: {
+            id: 'ASC',
+          },
+          id: 'ASC',
+        },
+      },
+    });
+
+    const result = fieldGroups.map(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ({ fields, ...rest }): GetAvailableFieldInFacilityRO => ({
+        ...rest,
+        bookingSlot: [],
+      }),
+    );
+
+    // find all overlap field
+    for (const date of getAvailableFieldInFacilityDto.dates) {
+      const overLapFieldGroup = await this.fieldGroupRepository.find({
+        relations: {
+          fields: true,
+        },
+        where: {
+          facility: {
+            id: facilityId,
+          },
+          sports: {
+            id: getAvailableFieldInFacilityDto.sportId,
+          },
+          fields: {
+            bookingSlots: {
+              date: date,
+              booking: [
+                {
+                  startTime: Between(
+                    getAvailableFieldInFacilityDto.startTime,
+                    getAvailableFieldInFacilityDto.endTime,
+                  ),
+                },
+                {
+                  endTime: Between(
+                    getAvailableFieldInFacilityDto.startTime,
+                    getAvailableFieldInFacilityDto.endTime,
+                  ),
+                },
+                {
+                  startTime: LessThanOrEqual(
+                    getAvailableFieldInFacilityDto.startTime,
+                  ),
+                  endTime: MoreThanOrEqual(
+                    getAvailableFieldInFacilityDto.endTime,
+                  ),
+                },
+              ],
+            },
+          },
+        },
+      });
+
+      const overlapFields = overLapFieldGroup
+        .map(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ({ fields, ...rest }) => fields,
+        )
+        .flat();
+
+      for (let i = 0; i < result.length; i++) {
+        result[i].bookingSlot.push({
+          date: date,
+          fields: fieldGroups[i].fields.filter((field) =>
+            overlapFields.find((overlapField) => overlapField.id === field.id)
+              ? false
+              : true,
+          ),
+        });
+      }
+    }
+    // filter and return
+
+    return result;
   }
 }

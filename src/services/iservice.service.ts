@@ -29,4 +29,10 @@ export interface IServiceService {
   delete(serviceId: number, ownerId: UUID): Promise<{ message: string }>;
 
   getByFacility(facilityId: UUID): Promise<any[]>;
+
+  findOneByIdWithTransaction(
+    serviceId: number,
+    manager: EntityManager,
+    relations?: string[],
+  ): Promise<Service>;
 }
