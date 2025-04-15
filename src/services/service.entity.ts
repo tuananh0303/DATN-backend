@@ -9,7 +9,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -70,7 +69,7 @@ export class Service {
   })
   unit: UnitEnum;
 
-  @OneToOne(() => Sport, {
+  @ManyToOne(() => Sport, {
     onDelete: 'RESTRICT',
     nullable: false,
   })
