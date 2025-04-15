@@ -28,6 +28,7 @@ import { SportLicensesDto } from './dtos/requests/sport-licenses.dto';
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { UUID } from 'crypto';
 import { DeleteImageDto } from './dtos/requests/delete-image.dto';
+import { UpdateBaseInfo } from './dtos/requests/update-base-info.dto';
 
 @Controller('facility')
 export class FacilityController {
@@ -209,5 +210,22 @@ export class FacilityController {
     @ActivePerson('sub') ownerId: UUID,
   ) {
     return this.facilityService.deleteImage(deleteImageDto, ownerId);
+  }
+
+  @ApiOperation({
+    summary: 'update base information of facility (role: owner)',
+  })
+  @Put(':facilityId/update-info')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  public updateBaseInfo(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @Body() updateBaseInfo: UpdateBaseInfo,
+    @ActivePerson('sub') ownerId: UUID,
+  ) {
+    return this.facilityService.updateBaseInfo(
+      facilityId,
+      updateBaseInfo,
+      ownerId,
+    );
   }
 }

@@ -3,6 +3,7 @@ import { Facility } from './facility.entity';
 import { CreateFacilityDto } from './dtos/requests/create-facility.dto';
 import { EntityManager } from 'typeorm';
 import { DeleteImageDto } from './dtos/requests/delete-image.dto';
+import { UpdateBaseInfo } from './dtos/requests/update-base-info.dto';
 
 export interface IFacilityService {
   findOneByIdAndOwnerId(facilityId: UUID, ownerId: UUID): Promise<Facility>;
@@ -67,6 +68,12 @@ export interface IFacilityService {
 
   deleteImage(
     deleteImageDto: DeleteImageDto,
+    ownerId: UUID,
+  ): Promise<{ message: string }>;
+
+  updateBaseInfo(
+    facilityId: UUID,
+    updateBaseInfo: UpdateBaseInfo,
     ownerId: UUID,
   ): Promise<{ message: string }>;
 }

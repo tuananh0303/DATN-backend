@@ -21,6 +21,7 @@ import { ApprovalService } from 'src/approvals/approval.service';
 import { ApprovalTypeEnum } from 'src/approvals/enums/approval-type.enum';
 import { SportService } from 'src/sports/sport.service';
 import { DeleteImageDto } from './dtos/requests/delete-image.dto';
+import { UpdateBaseInfo } from './dtos/requests/update-base-info.dto';
 
 @Injectable()
 export class FacilityService implements IFacilityService {
@@ -275,8 +276,8 @@ export class FacilityService implements IFacilityService {
     }));
   }
 
-  public async getByFacility(facilityId: UUID): Promise<Facility> {
-    return this.facilityRepository
+  public async getByFacility(facilityId: UUID): Promise<any> {
+    const facility = await this.facilityRepository
       .findOneOrFail({
         relations: {
           fieldGroups: {
@@ -284,9 +285,13 @@ export class FacilityService implements IFacilityService {
             sports: true,
           },
           owner: true,
-          licenses: true,
+          licenses: {
+            sport: true,
+          },
           certificate: true,
           approvals: true,
+          services: true,
+          vouchers: true,
         },
         where: {
           id: facilityId,
@@ -303,6 +308,16 @@ export class FacilityService implements IFacilityService {
           `Not found facility with id: ${facilityId}`,
         );
       });
+
+    return {
+      ...facility,
+      minPrice: Math.min(
+        ...facility.fieldGroups.map((fieldGroup) => fieldGroup.basePrice),
+      ),
+      maxPrice: Math.max(
+        ...facility.fieldGroups.map((fieldGroup) => fieldGroup.basePrice),
+      ),
+    };
   }
 
   public async findOneById(facilityId: UUID): Promise<Facility> {
@@ -539,6 +554,42 @@ export class FacilityService implements IFacilityService {
 
     return {
       message: 'Delete image in facility successful',
+    };
+  }
+
+  public async updateBaseInfo(
+    facilityId: UUID,
+    updateBaseInfo: UpdateBaseInfo,
+    ownerId: UUID,
+  ): Promise<{ message: string }> {
+    const facility = await this.findOneByIdAndOwnerId(facilityId, ownerId);
+
+    if (updateBaseInfo.description)
+      facility.description = updateBaseInfo.description;
+
+    if (updateBaseInfo.openTime1) facility.openTime1 = updateBaseInfo.openTime1;
+
+    if (updateBaseInfo.closeTime1)
+      facility.closeTime1 = updateBaseInfo.closeTime1;
+
+    if (updateBaseInfo.openTime2) facility.openTime2 = updateBaseInfo.openTime2;
+
+    if (updateBaseInfo.closeTime2)
+      facility.closeTime2 = updateBaseInfo.closeTime2;
+
+    if (updateBaseInfo.openTime3) facility.openTime3 = updateBaseInfo.openTime3;
+
+    if (updateBaseInfo.closeTime3)
+      facility.closeTime3 = updateBaseInfo.closeTime3;
+
+    try {
+      await this.facilityRepository.save(facility);
+    } catch (error) {
+      throw new BadRequestException(String(error));
+    }
+
+    return {
+      message: 'Update info facility successful',
     };
   }
 }

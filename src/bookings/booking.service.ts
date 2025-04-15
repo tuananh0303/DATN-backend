@@ -36,6 +36,8 @@ import { AdditionalService } from 'src/additional-services/additional-service.en
 import { ServiceService } from 'src/services/service.service';
 import { AdditionalServiceService } from 'src/additional-services/additional-service.service';
 import { UnitEnum } from 'src/services/enums/unit.enum';
+import { FacilityStatusEnum } from 'src/facilities/enums/facility-status.enum';
+import { FieldStatusEnum } from 'src/fields/enums/field-status.enum';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -92,6 +94,10 @@ export class BookingService implements IBookingService {
       createDraftBookingDto.bookingSlots[0].fieldId,
       ['fieldGroup.facility'],
     );
+
+    if (firstField.fieldGroup.facility.status !== FacilityStatusEnum.ACTIVE) {
+      throw new BadRequestException('The facility of field must be actived');
+    }
 
     const fieldGroupId = firstField.fieldGroup.id;
     const facility = firstField.fieldGroup.facility;
@@ -159,6 +165,10 @@ export class BookingService implements IBookingService {
           manager,
           ['fieldGroup.facility', 'fieldGroup.sports'],
         );
+
+        if (field.status === FieldStatusEnum.CLOSED) {
+          throw new BadRequestException(`${field.name} field  is closed`);
+        }
 
         // check fields have same field group
         if (field.fieldGroup.id !== fieldGroupId) {
