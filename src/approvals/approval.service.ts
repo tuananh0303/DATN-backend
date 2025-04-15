@@ -193,6 +193,7 @@ export class ApprovalService implements IApprovalService {
           licenses: true,
           fieldGroups: {
             fields: true,
+          }
         },
         sport: true,
       },
