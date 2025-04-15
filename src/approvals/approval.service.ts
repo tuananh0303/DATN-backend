@@ -191,6 +191,8 @@ export class ApprovalService implements IApprovalService {
         facility: {
           certificate: true,
           licenses: true,
+          fieldGroups: {
+            fields: true,
         },
         sport: true,
       },
