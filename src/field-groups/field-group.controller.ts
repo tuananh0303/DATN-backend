@@ -89,8 +89,11 @@ export class FieldGroupController {
   })
   @Get(':facilityId/available-field-in-facility')
   @AuthRoles(AuthRoleEnum.NONE)
+  @ApiQuery({
+    type: GetAvailableFieldInFacilityDto,
+  })
   public getAvailableFieldInFacility(
-    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @Query('facilityId', ParseUUIDPipe) facilityId: UUID,
     @Body() getAvailableFieldInFacilityDto: GetAvailableFieldInFacilityDto,
   ) {
     return this.fieldGroupService.getAvailabeFieldInFacility(
