@@ -119,7 +119,7 @@ export class FieldGroup {
   @JoinColumn()
   facility: Facility;
 
-  @ManyToMany(() => Sport)
+  @ManyToMany(() => Sport, (sport) => sport.fieldGroups)
   @JoinTable()
   sports: Sport[];
 

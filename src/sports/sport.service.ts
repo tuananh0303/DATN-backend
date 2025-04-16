@@ -9,6 +9,7 @@ import { MessageResponseDto } from './dtos/responses/message-response.dto';
 import { EntityManager, In, Repository } from 'typeorm';
 import { Sport } from './sport.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UUID } from 'crypto';
 
 @Injectable()
 export class SportService implements ISportService {
@@ -77,5 +78,17 @@ export class SportService implements ISportService {
       .catch(() => {
         throw new NotFoundException(`Not found the sport by id: ${sportId}`);
       });
+  }
+
+  public async getManyByFacility(facilityId: UUID): Promise<Sport[]> {
+    return this.sportRepository.find({
+      where: {
+        fieldGroups: {
+          facility: {
+            id: facilityId,
+          },
+        },
+      },
+    });
   }
 }

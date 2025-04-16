@@ -2,6 +2,7 @@ import { EntityManager } from 'typeorm';
 import { CreateSportDto } from './dtos/requests/create-sport.dto';
 import { MessageResponseDto } from './dtos/responses/message-response.dto';
 import { Sport } from './sport.entity';
+import { UUID } from 'crypto';
 
 export interface ISportService {
   create(createSportDto: CreateSportDto): Promise<MessageResponseDto>;
@@ -16,4 +17,6 @@ export interface ISportService {
   ): Promise<Sport>;
 
   findOneById(sportId: number): Promise<Sport>;
+
+  getManyByFacility(facilityId: UUID): Promise<Sport[]>;
 }
