@@ -23,8 +23,9 @@ import { FacilityStatusEnum } from 'src/facilities/enums/facility-status.enum';
 import { LicenseService } from 'src/licenses/license.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateServiceDto } from './dtos/requests/update-service.dto';
-import { GetAvailableFieldInFacilityDto } from 'src/field-groups/dtos/request/get-available-field-in-facility.dto';
 import { BookingService } from 'src/bookings/booking.service';
+import { AdditionalServiceService } from 'src/additional-services/additional-service.service';
+import { GetAvailableServiceInFacilityResponseDto } from './dtos/responses/get-available-service-in-facility-response.dto.ts';
 
 @Injectable()
 export class ServiceService implements IServiceService {
@@ -55,6 +56,10 @@ export class ServiceService implements IServiceService {
      */
     @Inject(forwardRef(() => BookingService))
     private readonly bookingService: BookingService,
+    /**
+     * inject AdditionalServiceService
+     */
+    private readonly additionalServiceService: AdditionalServiceService,
   ) {}
 
   public async createMany(
@@ -271,21 +276,56 @@ export class ServiceService implements IServiceService {
 
   public async getAvailableServiceInFacility(
     facilityId: UUID,
-    getAvailableServiceInFacilityDto: GetAvailableFieldInFacilityDto,
+    bookingId: UUID,
   ): Promise<any> {
+    const booking = await this.bookingService.findOneById(bookingId, [
+      'sport',
+      'bookingSlots',
+    ]);
+
     const services = await this.serviceRepository.find({
       where: {
+        facility: {
+          id: facilityId,
+        },
         sport: {
-          id: getAvailableServiceInFacilityDto.sportId,
+          id: booking.sport.id,
         },
       },
     });
 
+    const dates = booking.bookingSlots.map((bookingSlot) => bookingSlot.date);
+
+    const result: GetAvailableServiceInFacilityResponseDto[] = [];
+
     for (const service of services) {
-      for (const date of getAvailableServiceInFacilityDto.dates) {
-        
+      const quantity: number[] = [];
+
+      for (const date of dates) {
+        const rentedAdditionalService =
+          await this.additionalServiceService.findManyByServiceIdAndDate(
+            service.id,
+            date,
+            booking.startTime,
+            booking.endTime,
+          );
+
+        quantity.push(
+          service.amount -
+            rentedAdditionalService.reduce(
+              (prev, curr) => prev + curr.quantity,
+              0,
+            ),
+        );
       }
+
+      result.push({
+        ...service,
+        remain: Math.min(...quantity),
+      } as GetAvailableServiceInFacilityResponseDto);
     }
+
+    return result;
   }
 
   public async addBookedCound(bookingId: UUID): Promise<any> {

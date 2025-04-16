@@ -1,13 +1,28 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { IAdditionalServiceService } from './iadditional-service.service';
 import { Booking } from 'src/bookings/booking.entity';
-import { EntityManager } from 'typeorm';
+import {
+  Between,
+  EntityManager,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 import { AdditionalService } from './additional-service.entity';
 import { Service } from 'src/services/service.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
 
 @Injectable()
 export class AdditionalServiceService implements IAdditionalServiceService {
-  constructor() {}
+  constructor(
+    /**
+     * inject AdditionalRepository
+     */
+    @InjectRepository(AdditionalService)
+    private readonly additionalRepository: Repository<AdditionalService>,
+  ) {}
 
   public async createWithTransaction(
     booking: Booking,
@@ -26,5 +41,48 @@ export class AdditionalServiceService implements IAdditionalServiceService {
     });
 
     return await manager.save(additionalService);
+  }
+
+  public async findManyByServiceIdAndDate(
+    serviceId: number,
+    date: Date,
+    startTime: string,
+    endTime: string,
+  ): Promise<AdditionalService[]> {
+    return await this.additionalRepository.find({
+      where: {
+        serviceId: serviceId,
+        booking: [
+          {
+            startTime: Between(startTime, endTime),
+            bookingSlots: {
+              date: date,
+            },
+            payment: {
+              status: Not(PaymentStatusEnum.CANCELLED),
+            },
+          },
+          {
+            endTime: Between(startTime, endTime),
+            bookingSlots: {
+              date: date,
+            },
+            payment: {
+              status: Not(PaymentStatusEnum.CANCELLED),
+            },
+          },
+          {
+            startTime: LessThanOrEqual(startTime),
+            endTime: MoreThanOrEqual(endTime),
+            bookingSlots: {
+              date: date,
+            },
+            payment: {
+              status: Not(PaymentStatusEnum.CANCELLED),
+            },
+          },
+        ],
+      },
+    });
   }
 }

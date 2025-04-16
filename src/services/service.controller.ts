@@ -17,7 +17,6 @@ import { CreateManyServicesDto } from './dtos/requests/create-many-services.dto'
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { UUID } from 'crypto';
 import { UpdateServiceDto } from './dtos/requests/update-service.dto';
-import { GetAvailableFieldInFacilityDto } from 'src/field-groups/dtos/request/get-available-field-in-facility.dto';
 
 @Controller('service')
 export class ServiceController {
@@ -77,12 +76,15 @@ export class ServiceController {
   @ApiOperation({
     summary: 'get available service in facility (role: none)',
   })
-  @Post(':facilityId/available-service-in-facility')
+  @Post(':facilityId/:bookingId/available-service-in-facility')
   @AuthRoles(AuthRoleEnum.NONE)
   public getAvailableServiceInFacility(
     @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
-    @Body() getAvailableServiceInFacilityDto: GetAvailableFieldInFacilityDto,
+    @Param('bookingId', ParseUUIDPipe) bookingId: UUID,
   ) {
-    return;
+    return this.serviceService.getAvailableServiceInFacility(
+      facilityId,
+      bookingId,
+    );
   }
 }

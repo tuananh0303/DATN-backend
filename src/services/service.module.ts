@@ -7,6 +7,7 @@ import { FacilityModule } from 'src/facilities/facility.module';
 import { SportModule } from 'src/sports/sport.module';
 import { LicenseModule } from 'src/licenses/license.module';
 import { BookingModule } from 'src/bookings/booking.module';
+import { AdditionalServiceModule } from 'src/additional-services/additional-service.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { BookingModule } from 'src/bookings/booking.module';
     SportModule,
     LicenseModule,
     forwardRef(() => BookingModule),
+    AdditionalServiceModule,
   ],
   providers: [ServiceService],
   controllers: [ServiceController],

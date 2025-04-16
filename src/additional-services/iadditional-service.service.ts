@@ -10,4 +10,11 @@ export interface IAdditionalServiceService {
     quantity: number,
     manager: EntityManager,
   ): Promise<AdditionalService>;
+
+  findManyByServiceIdAndDate(
+    serviceId: number,
+    date: Date,
+    startTime: string,
+    endTime: string,
+  ): Promise<AdditionalService[]>;
 }
