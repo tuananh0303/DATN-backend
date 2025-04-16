@@ -228,4 +228,13 @@ export class FacilityController {
       ownerId,
     );
   }
+
+  @ApiOperation({
+    summary: 'get active time of facility (role: none)',
+  })
+  @Get(':facilityId/active-time')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getActiveTime(@Param('facilityId', ParseUUIDPipe) facilityId: UUID) {
+    return this.facilityService.getActiveTime(facilityId);
+  }
 }

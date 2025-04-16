@@ -272,7 +272,21 @@ export class ServiceService implements IServiceService {
   public async getAvailableServiceInFacility(
     facilityId: UUID,
     getAvailableServiceInFacilityDto: GetAvailableFieldInFacilityDto,
-  ): Promise<any> {}
+  ): Promise<any> {
+    const services = await this.serviceRepository.find({
+      where: {
+        sport: {
+          id: getAvailableServiceInFacilityDto.sportId,
+        },
+      },
+    });
+
+    for (const service of services) {
+      for (const date of getAvailableServiceInFacilityDto.dates) {
+        
+      }
+    }
+  }
 
   public async addBookedCound(bookingId: UUID): Promise<any> {
     const booking = await this.bookingService.findOneById(bookingId, [

@@ -75,4 +75,6 @@ export interface IFacilityService {
     updateBaseInfo: UpdateBaseInfo,
     ownerId: UUID,
   ): Promise<{ message: string }>;
+
+  getActiveTime(facilityId: UUID): Promise<any>;
 }

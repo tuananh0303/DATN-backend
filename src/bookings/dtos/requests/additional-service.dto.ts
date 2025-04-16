@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsNotEmpty, IsNumber, IsPositive } from 'class-validator';
 
 export class AdditionalServiceDto {
   @ApiProperty({
@@ -12,11 +13,20 @@ export class AdditionalServiceDto {
   serviceId: number;
 
   @ApiProperty({
+    type: Date,
+    example: '2025-04-25',
+  })
+  @IsDate()
+  @IsNotEmpty()
+  @Type(() => Date)
+  date: Date;
+
+  @ApiProperty({
     type: 'number',
     example: 1,
   })
   @IsNotEmpty()
   @IsNumber()
   @IsPositive()
-  amount: number;
+  quantity: number;
 }

@@ -558,7 +558,7 @@ export class BookingService implements IBookingService {
 
           if (
             service.amount <
-            amountOfServiceRetend + additionalService.amount
+            amountOfServiceRetend + additionalService.quantity
           ) {
             throw new BadRequestException(
               `Service ${additionalService.serviceId} is out of stock in date ${bookingSlot.date.toISOString()}}`,
@@ -571,12 +571,12 @@ export class BookingService implements IBookingService {
 
           servicePrice +=
             service.price *
-            additionalService.amount *
+            additionalService.quantity *
             booking.bookingSlots.length;
         } else {
           servicePrice +=
             service.price *
-            additionalService.amount *
+            additionalService.quantity *
             booking.bookingSlots.length *
             playTime;
         }
@@ -585,7 +585,7 @@ export class BookingService implements IBookingService {
           await this.additionalServiceService.createWithTransaction(
             booking,
             service,
-            additionalService.amount,
+            additionalService.quantity,
             manager,
           );
 

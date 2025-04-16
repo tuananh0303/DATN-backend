@@ -592,4 +592,25 @@ export class FacilityService implements IFacilityService {
       message: 'Update info facility successful',
     };
   }
+
+  public async getActiveTime(facilityId: UUID): Promise<any> {
+    const facility = await this.facilityRepository
+      .findOneOrFail({
+        where: {
+          id: facilityId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException(`Not found facility by id: ${facilityId}`);
+      });
+
+    return {
+      openTime1: facility.openTime1,
+      closeTime1: facility.closeTime1,
+      openTime2: facility.openTime2,
+      closeTime2: facility.closeTime2,
+      openTime3: facility.closeTime3,
+      closeTime3: facility.closeTime3,
+    };
+  }
 }

@@ -18,6 +18,12 @@ export class AdditionalService {
   })
   quantity: number;
 
+  @PrimaryColumn({
+    type: 'date',
+    nullable: false,
+  })
+  date: Date;
+
   @ManyToOne(() => Service, (service) => service.additionalServices, {
     nullable: false,
   })
