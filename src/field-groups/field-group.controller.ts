@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -87,13 +89,11 @@ export class FieldGroupController {
   @ApiOperation({
     summary: 'get all available fields in facility (role: none)',
   })
-  @Get(':facilityId/available-field-in-facility')
+  @Post(':facilityId/available-field-in-facility')
+  @HttpCode(HttpStatus.OK)
   @AuthRoles(AuthRoleEnum.NONE)
-  @ApiQuery({
-    type: GetAvailableFieldInFacilityDto,
-  })
   public getAvailableFieldInFacility(
-    @Query('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
     @Body() getAvailableFieldInFacilityDto: GetAvailableFieldInFacilityDto,
   ) {
     return this.fieldGroupService.getAvailabeFieldInFacility(
