@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { PaymentStatusEnum } from './enums/payment-status.enum';
 import { Booking } from 'src/bookings/booking.entity';
@@ -37,6 +38,12 @@ export class Payment {
     nullable: true,
   })
   discount?: number;
+
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    nullable: false,
+  })
+  updatedAt: Date;
 
   @Column({
     type: 'enum',

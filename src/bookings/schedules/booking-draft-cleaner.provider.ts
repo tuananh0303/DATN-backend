@@ -17,12 +17,12 @@ export class BookingDraftCleanerProvider {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   public async clearnBookingDraft() {
-    const fiveMinutes = new Date(Date.now() - 10 * 60 * 1000);
+    const tenMinutes = new Date(Date.now() - 10 * 60 * 1000);
 
     const expiredBookingDraft = await this.bookingRepository.find({
       where: {
         status: BookingStatusEnum.DRAFT,
-        createdAt: LessThan(fiveMinutes),
+        createdAt: LessThan(tenMinutes),
       },
     });
 
