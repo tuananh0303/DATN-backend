@@ -40,6 +40,7 @@ import { UnitEnum } from 'src/services/enums/unit.enum';
 import { FacilityStatusEnum } from 'src/facilities/enums/facility-status.enum';
 import { FieldStatusEnum } from 'src/fields/enums/field-status.enum';
 import { FacilityService } from 'src/facilities/facility.service';
+import { GetScheduleDto } from './dtos/requests/get-schedule.dto';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -736,5 +737,34 @@ export class BookingService implements IBookingService {
       facility,
       booking,
     };
+  }
+
+  public async getSchedule(
+    getScheduleDto: GetScheduleDto,
+    ownerId: UUID,
+  ): Promise<Booking[]> {
+    return await this.bookingRepository.find({
+      relations: {
+        payment: true,
+      },
+      where: {
+        bookingSlots: {
+          date: getScheduleDto.date,
+          field: {
+            fieldGroup: {
+              id: getScheduleDto.fieldGroupId,
+              facility: {
+                owner: {
+                  id: ownerId,
+                },
+              },
+            },
+          },
+        },
+        payment: {
+          status: Not(PaymentStatusEnum.CANCELLED),
+        },
+      },
+    });
   }
 }

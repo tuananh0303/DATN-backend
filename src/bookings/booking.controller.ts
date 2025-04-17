@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { CreateDraftBookingDto } from './dtos/requests/create-draft-booking.dto';
@@ -17,6 +18,7 @@ import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
 import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
 import { UpdateBookingSlotDto } from './dtos/requests/update-booking-slot.dto';
 import { UpdateAdditionalServicesDto } from './dtos/requests/update-additional-services.dto';
+import { GetScheduleDto } from './dtos/requests/get-schedule.dto';
 
 @Controller('booking')
 export class BookingController {
@@ -101,5 +103,17 @@ export class BookingController {
   @AuthRoles(AuthRoleEnum.NONE)
   public getDetail(@Param('bookingId', ParseUUIDPipe) bookingId: UUID) {
     return this.bookingService.getDetail(bookingId);
+  }
+
+  @ApiOperation({
+    summary: 'get bookings to display schedule (role: owner)',
+  })
+  @Get('schedule')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  public getSchedule(
+    @Query() getScheduleDto: GetScheduleDto,
+    @ActivePerson('sub') ownerId: UUID,
+  ) {
+    return this.bookingService.getSchedule(getScheduleDto, ownerId);
   }
 }
