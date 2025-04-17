@@ -93,4 +93,13 @@ export class BookingController {
   ) {
     return this.bookingService.deleteDraft(booingId, playerId);
   }
+
+  @ApiOperation({
+    summary: 'get detail booking (role: none)',
+  })
+  @Get(':bookingId/detail')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getDetail(@Param('bookingId', ParseUUIDPipe) bookingId: UUID) {
+    return this.bookingService.getDetail(bookingId);
+  }
 }

@@ -612,16 +612,29 @@ export class BookingService implements IBookingService {
     bookingId: UUID,
     relations?: string[],
   ): Promise<Booking> {
-    return this.bookingRepository
-      .findOneOrFail({
-        relations,
-        where: {
-          id: bookingId,
-        },
-      })
-      .catch(() => {
-        throw new BadRequestException(`Not found the booking ${bookingId}`);
-      });
+    // return this.bookingRepository
+    //   .findOneOrFail({
+    //     relations,
+    //     where: {
+    //       id: bookingId,
+    //     },
+    //   })
+    //   .catch(() => {
+    //     throw new BadRequestException(`Not found the booking ${bookingId}`);
+    //   });
+
+    const booking = await this.bookingRepository.findOne({
+      relations,
+      where: {
+        id: bookingId,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException();
+    }
+
+    return booking;
   }
 
   public async getManyByPlayer(playerId: UUID): Promise<any[]> {
@@ -632,7 +645,6 @@ export class BookingService implements IBookingService {
           field: true,
         },
         payment: true,
-        additionalServices: true,
       },
       where: {
         player: {
@@ -688,6 +700,37 @@ export class BookingService implements IBookingService {
 
     return {
       message: 'Delete draft booking successful',
+    };
+  }
+
+  public async getDetail(bookingId: UUID): Promise<any> {
+    const booking = await this.bookingRepository
+      .findOneOrFail({
+        relations: {
+          additionalServices: {
+            service: true,
+          },
+          bookingSlots: {
+            field: true,
+          },
+          sport: true,
+          payment: true,
+        },
+        where: {
+          id: bookingId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the booking');
+      });
+
+    const facility = await this.facilityService.findOneByField(
+      booking.bookingSlots[0].field.id,
+    );
+
+    return {
+      facility,
+      booking,
     };
   }
 }

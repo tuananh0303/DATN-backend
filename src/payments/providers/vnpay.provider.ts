@@ -43,8 +43,6 @@ export class VnpayProvider {
   ) {}
 
   public payment(payment: Payment, req: Request): { paymentUrl: string } {
-    console.log('q2113');
-
     const vnpay = new VNPay({
       tmnCode: this.configService.get<string>('TMN_CODE')!,
       secureSecret: this.configService.get<string>('SECURE_SECRET')!,
@@ -90,8 +88,6 @@ export class VnpayProvider {
       hashAlgorithm: HashAlgorithm.SHA512, // tùy chọn
     });
 
-    console.log('req: ', req);
-
     const verify: VerifyReturnUrl = vnpay.verifyIpnCall(
       req.query as ReturnQueryFromVNPay,
     );
@@ -127,7 +123,7 @@ export class VnpayProvider {
 
     await this.paymentRepository.save(payment);
 
-    await this.serviceService.addBookedCound(payment.booking.id);
+    await this.serviceService.addBookedCount(payment.booking.id);
 
     return {
       message: 'Payment successful',

@@ -25,6 +25,7 @@ import { BookingModule } from './bookings/booking.module';
 import { BookingSlotModule } from './booking-slots/booking-slot.module';
 import { AdditionalServiceModule } from './additional-services/additional-service.module';
 import { PaymentModule } from './payments/payment.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { PaymentModule } from './payments/payment.module';
     BookingSlotModule,
     AdditionalServiceModule,
     PaymentModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [

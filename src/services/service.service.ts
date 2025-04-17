@@ -328,10 +328,10 @@ export class ServiceService implements IServiceService {
     return result;
   }
 
-  public async addBookedCound(bookingId: UUID): Promise<any> {
+  public async addBookedCount(bookingId: UUID): Promise<any> {
     const booking = await this.bookingService.findOneById(bookingId, [
       'bookingSlots',
-      'additionalService.service',
+      'additionalServices.service',
     ]);
 
     const time = booking.bookingSlots.length;

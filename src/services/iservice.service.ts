@@ -41,5 +41,5 @@ export interface IServiceService {
     bookingId: UUID,
   ): Promise<any>;
 
-  addBookedCound(bookingId: UUID): Promise<any>;
+  addBookedCount(bookingId: UUID): Promise<any>;
 }
