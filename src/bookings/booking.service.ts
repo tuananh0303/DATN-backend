@@ -13,6 +13,7 @@ import {
   Between,
   DataSource,
   EntityManager,
+  In,
   LessThanOrEqual,
   MoreThanOrEqual,
   Not,
@@ -651,6 +652,9 @@ export class BookingService implements IBookingService {
           id: playerId,
         },
         status: BookingStatusEnum.COMPLETED,
+        payment: {
+          status: In([PaymentStatusEnum.CANCELLED, PaymentStatusEnum.PAID]),
+        },
       },
     });
 
