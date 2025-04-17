@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   Param,
   ParseUUIDPipe,
   Post,
@@ -69,5 +71,26 @@ export class BookingController {
       updateAdditionServices,
       playerId,
     );
+  }
+
+  @ApiOperation({
+    summary: 'get all booking of player (role: player)',
+  })
+  @Get('player')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public getManyByPlayer(@ActivePerson('sub') playerId: UUID) {
+    return this.bookingService.getManyByPlayer(playerId);
+  }
+
+  @ApiOperation({
+    summary: 'delete draft booking (role: player)',
+  })
+  @Delete(':bookingId/delete-draft')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public deleteDraftBooking(
+    @Param('bookingId', ParseUUIDPipe) booingId: UUID,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.bookingService.deleteDraft(booingId, playerId);
   }
 }

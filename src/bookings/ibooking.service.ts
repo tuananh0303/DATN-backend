@@ -29,4 +29,8 @@ export interface IBookingService {
   ): Promise<Booking>;
 
   findOneById(bookingId: UUID, relations?: string[]): Promise<Booking>;
+
+  getManyByPlayer(playerId: UUID): Promise<any[]>;
+
+  deleteDraft(bookingId: UUID, playerId: UUID): Promise<{ message: string }>;
 }

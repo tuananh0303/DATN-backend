@@ -10,6 +10,7 @@ import { BookingSlotModule } from 'src/booking-slots/booking-slot.module';
 import { PaymentModule } from 'src/payments/payment.module';
 import { ServiceModule } from 'src/services/service.module';
 import { AdditionalServiceModule } from 'src/additional-services/additional-service.module';
+import { FacilityModule } from 'src/facilities/facility.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AdditionalServiceModule } from 'src/additional-services/additional-serv
     PaymentModule,
     forwardRef(() => ServiceModule),
     AdditionalServiceModule,
+    FacilityModule,
   ],
   controllers: [BookingController],
   providers: [BookingService],

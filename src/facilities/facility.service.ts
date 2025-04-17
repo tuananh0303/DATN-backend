@@ -613,4 +613,23 @@ export class FacilityService implements IFacilityService {
       closeTime3: facility.closeTime3,
     };
   }
+
+  public async findOneByField(fieldId: number): Promise<Facility> {
+    return await this.facilityRepository
+      .findOneOrFail({
+        relations: {
+          fieldGroups: true,
+        },
+        where: {
+          fieldGroups: {
+            fields: {
+              id: fieldId,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the facility by field');
+      });
+  }
 }

@@ -38,6 +38,7 @@ import { AdditionalServiceService } from 'src/additional-services/additional-ser
 import { UnitEnum } from 'src/services/enums/unit.enum';
 import { FacilityStatusEnum } from 'src/facilities/enums/facility-status.enum';
 import { FieldStatusEnum } from 'src/fields/enums/field-status.enum';
+import { FacilityService } from 'src/facilities/facility.service';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -81,6 +82,10 @@ export class BookingService implements IBookingService {
      * inject AdditionalService
      */
     private readonly additionalServiceService: AdditionalServiceService,
+    /**
+     * inject FacilityService
+     */
+    private readonly facilityService: FacilityService,
   ) {}
 
   public async createDraft(
@@ -617,5 +622,72 @@ export class BookingService implements IBookingService {
       .catch(() => {
         throw new BadRequestException(`Not found the booking ${bookingId}`);
       });
+  }
+
+  public async getManyByPlayer(playerId: UUID): Promise<any[]> {
+    const bookings = await this.bookingRepository.find({
+      relations: {
+        sport: true,
+        bookingSlots: {
+          field: true,
+        },
+        payment: true,
+        additionalServices: true,
+      },
+      where: {
+        player: {
+          id: playerId,
+        },
+        status: BookingStatusEnum.COMPLETED,
+      },
+    });
+
+    // get facility and fieldGroup by field in booking
+    return await Promise.all(
+      bookings.map(async (booking) => {
+        const facility = await this.facilityService.findOneByField(
+          booking.bookingSlots[0].field.id,
+        );
+
+        return {
+          facility,
+          booking,
+        };
+      }),
+    );
+  }
+
+  public async deleteDraft(
+    bookingId: UUID,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    const booking = await this.bookingRepository
+      .findOneOrFail({
+        where: {
+          id: bookingId,
+          player: {
+            id: playerId,
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the booking');
+      });
+
+    if (booking.status !== BookingStatusEnum.DRAFT) {
+      throw new BadRequestException('You only can delete the draft booking');
+    }
+
+    try {
+      await this.bookingRepository.remove(booking);
+    } catch {
+      throw new BadRequestException(
+        'An error occurred when delete the draft booking',
+      );
+    }
+
+    return {
+      message: 'Delete draft booking successful',
+    };
   }
 }
