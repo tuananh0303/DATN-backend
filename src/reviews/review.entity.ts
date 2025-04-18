@@ -40,18 +40,18 @@ export class Review {
   @CreateDateColumn({
     type: 'timestamptz',
   })
-  createdAt: Date;
+  reviewAt: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
   })
-  updatedAt: Date;
+  feedbackAt: Date;
 
   @Column({
-    type: 'bool',
-    default: false,
+    type: 'text',
+    nullable: true,
   })
-  isEdited: boolean;
+  feedback?: string;
 
   @OneToOne(() => Booking, (booking) => booking.review, {
     onDelete: 'CASCADE',

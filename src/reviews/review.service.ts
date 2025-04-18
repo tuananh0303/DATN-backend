@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { IReviewService } from './ireview.service';
 import { UUID } from 'crypto';
 import { CreateReviewDto } from './dtos/requests/create-review.dto';
@@ -103,5 +107,100 @@ export class ReviewService implements IReviewService {
     return {
       message: 'create review successful',
     };
+  }
+
+  public async delete(
+    reviewId: number,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    const review = await this.reviewRepository
+      .findOneOrFail({
+        where: {
+          id: reviewId,
+          booking: {
+            player: {
+              id: playerId,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the reivew');
+      });
+
+    try {
+      await this.reviewRepository.remove(review);
+    } catch {
+      throw new BadRequestException('An error occurred when delete review');
+    }
+
+    return {
+      message: 'Delete review successful',
+    };
+  }
+
+  public async feedback(
+    message: string,
+    ownerId: UUID,
+    reviewId: number,
+  ): Promise<{ message: string }> {
+    const review = await this.reviewRepository
+      .findOneOrFail({
+        where: {
+          id: reviewId,
+          booking: {
+            bookingSlots: {
+              field: {
+                fieldGroup: {
+                  facility: {
+                    owner: {
+                      id: ownerId,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the review');
+      });
+
+    review.feedback = message;
+
+    try {
+      await this.reviewRepository.save(review);
+    } catch {
+      throw new BadRequestException('An error occurred when feedback');
+    }
+
+    return {
+      message: 'Feedback review successful',
+    };
+  }
+
+  public async getManyByFacility(facilityId: UUID): Promise<Review[]> {
+    return await this.reviewRepository.find({
+      relations: {
+        booking: {
+          bookingSlots: true,
+          additionalServices: true,
+        },
+      },
+      where: {
+        booking: {
+          bookingSlots: {
+            field: {
+              fieldGroup: {
+                facility: {
+                  id: facilityId,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

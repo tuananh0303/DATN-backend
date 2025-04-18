@@ -647,6 +647,7 @@ export class BookingService implements IBookingService {
           field: true,
         },
         payment: true,
+        review: true,
       },
       where: {
         player: {
@@ -720,6 +721,7 @@ export class BookingService implements IBookingService {
           },
           sport: true,
           payment: true,
+          review: true,
         },
         where: {
           id: bookingId,

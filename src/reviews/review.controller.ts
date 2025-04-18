@@ -1,7 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
   Post,
+  Put,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
@@ -36,5 +41,41 @@ export class ReviewController {
     @ActivePerson('sub') playerId: UUID,
   ) {
     return this.reviewService.create(createReviewDto, images, playerId);
+  }
+
+  // @ApiOperation({
+  //   summary: 'delete review (role: player)',
+  // })
+  // @Delete(':reviewId')
+  // @AuthRoles(AuthRoleEnum.PLAYER)
+  // public delete(
+  //   @Param('reviewId', ParseIntPipe) reviewId: number,
+  //   @ActivePerson('sub') playerId: UUID,
+  // ) {
+  //   return this.reviewService.delete(reviewId, playerId);
+  // }
+
+  @ApiOperation({
+    summary: 'feedback review of player (role: owner)',
+  })
+  @Put(':reviewId/feedback')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  public feedback(
+    @Body('feedback') message: string,
+    @ActivePerson('sub') ownerId: UUID,
+    @Param('reviewId', ParseIntPipe) reviewId: number,
+  ) {
+    return this.reviewService.feedback(message, ownerId, reviewId);
+  }
+
+  @ApiOperation({
+    summary: 'get many review by facility (role: none)',
+  })
+  @Get('facility/:facilityId')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getManyByFacility(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+  ) {
+    return this.reviewService.getManyByFacility(facilityId);
   }
 }
