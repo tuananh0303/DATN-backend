@@ -663,4 +663,35 @@ export class FacilityService implements IFacilityService {
       ),
     }));
   }
+
+  public async addRating(fieldId: number, rating: number): Promise<Facility> {
+    const facility = await this.facilityRepository
+      .findOneOrFail({
+        where: {
+          fieldGroups: {
+            fields: {
+              id: fieldId,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        console.log('Loi khi add rating');
+        return null;
+      });
+
+    facility!.avgRating =
+      (facility!.avgRating * facility!.numberOfRating + rating) /
+      (facility!.numberOfRating + 1);
+
+    facility!.numberOfRating = facility!.numberOfRating + 1;
+
+    try {
+      await this.facilityRepository.save(facility!);
+    } catch {
+      console.log('Loi khi add rating');
+    }
+
+    return facility!;
+  }
 }

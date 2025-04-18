@@ -81,4 +81,6 @@ export interface IFacilityService {
   findOneByField(fieldId: number): Promise<Facility>;
 
   getTopFacilities(): Promise<any[]>;
+
+  addRating(fieldId: number, rating: number): Promise<Facility>;
 }

@@ -18,6 +18,7 @@ import { BookingSlot } from 'src/booking-slots/booking-slot.entity';
 import { AdditionalService } from 'src/additional-services/additional-service.entity';
 import { Payment } from 'src/payments/payment.entity';
 import { isBefore } from 'src/util/is-before';
+import { Review } from 'src/reviews/review.entity';
 
 @Entity()
 export class Booking {
@@ -78,6 +79,9 @@ export class Booking {
     (additionalService) => additionalService.booking,
   )
   additionalServices: AdditionalService[];
+
+  @OneToOne(() => Review, (review) => review.booking)
+  review: Review;
 
   @BeforeInsert()
   beforeInsert() {
