@@ -37,8 +37,5 @@ export interface IBookingService {
 
   getDetail(bookingId: UUID): Promise<any>;
 
-  getSchedule(
-    getScheduleDto: GetScheduleDto,
-    ownerId: UUID,
-  ): Promise<Booking[]>;
+  getSchedule(getScheduleDto: GetScheduleDto, ownerId: UUID): Promise<any[]>;
 }

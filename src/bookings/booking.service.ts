@@ -742,10 +742,14 @@ export class BookingService implements IBookingService {
   public async getSchedule(
     getScheduleDto: GetScheduleDto,
     ownerId: UUID,
-  ): Promise<Booking[]> {
-    return await this.bookingRepository.find({
+  ): Promise<any[]> {
+    const result = await this.bookingRepository.find({
       relations: {
         payment: true,
+        bookingSlots: {
+          field: true,
+        },
+        player: true,
       },
       where: {
         bookingSlots: {
@@ -766,5 +770,10 @@ export class BookingService implements IBookingService {
         },
       },
     });
+
+    return result.map(({ bookingSlots, ...rest }) => ({
+      ...rest,
+      field: bookingSlots[0].field,
+    }));
   }
 }
