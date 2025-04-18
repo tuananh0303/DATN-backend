@@ -632,4 +632,35 @@ export class FacilityService implements IFacilityService {
         throw new NotFoundException('Not found the facility by field');
       });
   }
+
+  public async getTopFacilities(): Promise<any[]> {
+    const facilities = await this.facilityRepository.find({
+      relations: {
+        fieldGroups: {
+          sports: true,
+        },
+      },
+      order: {
+        avgRating: 'DESC',
+      },
+      take: 8,
+    });
+
+    return facilities.map(({ fieldGroups, ...facility }) => ({
+      ...facility,
+      sports: fieldGroups
+        .map((fieldGroup) => fieldGroup.sports)
+        .flat()
+        .filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.id === item.id),
+        ),
+      minPrice: Math.min(
+        ...fieldGroups.map((fieldGroup) => fieldGroup.basePrice),
+      ),
+      maxPrice: Math.max(
+        ...fieldGroups.map((fieldGroup) => fieldGroup.basePrice),
+      ),
+    }));
+  }
 }

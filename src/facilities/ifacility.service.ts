@@ -79,4 +79,6 @@ export interface IFacilityService {
   getActiveTime(facilityId: UUID): Promise<any>;
 
   findOneByField(fieldId: number): Promise<Facility>;
+
+  getTopFacilities(): Promise<any[]>;
 }

@@ -110,6 +110,15 @@ export class FacilityController {
   }
 
   @ApiOperation({
+    summary: 'get top rated facility (role: none)',
+  })
+  @Get('top-facility')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getTopFacility() {
+    return this.facilityService.getTopFacilities();
+  }
+
+  @ApiOperation({
     summary: 'get facility by id (role: none)',
   })
   @Get(':facilityId')
