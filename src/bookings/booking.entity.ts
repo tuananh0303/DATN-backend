@@ -19,6 +19,7 @@ import { AdditionalService } from 'src/additional-services/additional-service.en
 import { Payment } from 'src/payments/payment.entity';
 import { isBefore } from 'src/util/is-before';
 import { Review } from 'src/reviews/review.entity';
+import { BadRequestException } from '@nestjs/common';
 
 @Entity()
 export class Booking {
@@ -85,10 +86,8 @@ export class Booking {
 
   @BeforeInsert()
   beforeInsert() {
-    isBefore(
-      this.startTime,
-      this.endTime,
-      'Start time must be more than end time',
-    );
+    if (!isBefore) {
+      throw new BadRequestException('Start time must be more than end time');
+    }
   }
 }

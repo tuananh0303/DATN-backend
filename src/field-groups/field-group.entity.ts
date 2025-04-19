@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { Facility } from 'src/facilities/facility.entity';
 import { Field } from 'src/fields/field.entity';
@@ -127,31 +128,31 @@ export class FieldGroup {
   @BeforeUpdate()
   beforeInsertAndUpdate() {
     if (this.peakEndTime1 && this.peakStartTime1) {
-      isBefore(
-        this.peakStartTime1,
-        this.peakEndTime1,
-        'Peak start time must be before peak end time',
-      );
+      if (!isBefore(this.peakStartTime1, this.peakEndTime1)) {
+        throw new BadRequestException(
+          'Peak start time must be before peak end time',
+        );
+      }
 
       this.numberOfPeaks = 1;
     }
 
     if (this.peakEndTime2 && this.peakStartTime2) {
-      isBefore(
-        this.peakStartTime2,
-        this.peakEndTime2,
-        'Peak start time must be before peak end time',
-      );
+      if (!isBefore(this.peakStartTime2, this.peakEndTime2)) {
+        throw new BadRequestException(
+          'Peak start time must be before peak end time',
+        );
+      }
 
       this.numberOfPeaks = 2;
     }
 
     if (this.peakEndTime3 && this.peakStartTime3) {
-      isBefore(
-        this.peakStartTime3,
-        this.peakEndTime3,
-        'Peak start time must be before peak end time',
-      );
+      if (!isBefore(this.peakStartTime3, this.peakEndTime3)) {
+        throw new BadRequestException(
+          'Peak start time must be before peak end time',
+        );
+      }
 
       this.numberOfPeaks = 3;
     }

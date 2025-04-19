@@ -109,31 +109,32 @@ export class BookingService implements IBookingService {
     const fieldGroupId = firstField.fieldGroup.id;
     const facility = firstField.fieldGroup.facility;
 
-    // check startTime and endTime between openTime1 and closeTime1
-    isBetweenTime(
-      createDraftBookingDto.startTime,
-      createDraftBookingDto.endTime,
-      facility.openTime1,
-      facility.closeTime1,
-      'Booking time not between open time and close time',
-    );
-    // check startTime and endTime between openTime2 and closeTime2
-    if (facility.openTime2 && facility.closeTime2) {
+    // check startTime and endTime between active time of facility
+    if (
       isBetweenTime(
         createDraftBookingDto.startTime,
         createDraftBookingDto.endTime,
-        facility.openTime2,
-        facility.closeTime2,
-        'Booking time not between open time and close time',
-      );
-    }
-    // check startTime and endTime between openTime3 and closeTime3
-    if (facility.openTime3 && facility.closeTime3) {
-      isBetweenTime(
-        createDraftBookingDto.startTime,
-        createDraftBookingDto.endTime,
-        facility.openTime3,
-        facility.closeTime3,
+        facility.openTime1,
+        facility.closeTime1,
+      ) ||
+      (facility.openTime2 &&
+        facility.closeTime2 &&
+        isBetweenTime(
+          createDraftBookingDto.startTime,
+          createDraftBookingDto.endTime,
+          facility.openTime2,
+          facility.closeTime2,
+        )) ||
+      (facility.openTime3 &&
+        facility.closeTime3 &&
+        isBetweenTime(
+          createDraftBookingDto.startTime,
+          createDraftBookingDto.endTime,
+          facility.openTime3,
+          facility.closeTime3,
+        ))
+    ) {
+      throw new BadRequestException(
         'Booking time not between open time and close time',
       );
     }

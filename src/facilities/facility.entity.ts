@@ -22,6 +22,7 @@ import { License } from 'src/licenses/license.entity';
 import { Service } from 'src/services/service.entity';
 import { Voucher } from 'src/vouchers/voucher.entity';
 import { Approval } from 'src/approvals/approval.entity';
+import { BadRequestException } from '@nestjs/common';
 
 @Entity()
 @Unique(['name', 'id'])
@@ -159,41 +160,33 @@ export class Facility {
     /**
      * openTime > closeTime
      */
-    isBefore(
-      this.openTime1,
-      this.closeTime1,
-      'Open time must be before close time',
-    );
+    if (!isBefore(this.openTime1, this.closeTime1)) {
+      throw new BadRequestException('Open time must be before close time');
+    }
 
     this.numberOfShifts = 1;
 
     if (this.openTime2 && this.closeTime2) {
-      isBefore(
-        this.closeTime1,
-        this.openTime2,
-        'Close time 1 must be before openTime 2',
-      );
+      if (!isBefore(this.closeTime1, this.openTime2)) {
+        throw new BadRequestException('Close time 1 must be before openTime 2');
+      }
 
-      isBefore(
-        this.openTime2,
-        this.closeTime2,
-        'Open time must be before close time',
-      );
+      if (!isBefore(this.openTime2, this.closeTime2)) {
+        throw new BadRequestException('Open time must be before close time');
+      }
 
       this.numberOfShifts = 2;
 
       if (this.openTime3 && this.closeTime3) {
-        isBefore(
-          this.closeTime1,
-          this.openTime2,
-          'Close time 2 must be before openTime 3',
-        );
+        if (!isBefore(this.closeTime1, this.openTime2)) {
+          throw new BadRequestException(
+            'Close time 2 must be before openTime 3',
+          );
+        }
 
-        isBefore(
-          this.openTime3,
-          this.closeTime3,
-          'Open time must be before close time',
-        );
+        if (!isBefore(this.openTime3, this.closeTime3)) {
+          throw new BadRequestException('Open time must be before close time');
+        }
 
         this.numberOfShifts = 3;
       }
