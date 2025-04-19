@@ -186,6 +186,7 @@ export class ReviewService implements IReviewService {
         booking: {
           bookingSlots: true,
           additionalServices: true,
+          player: true,
         },
       },
       where: {
