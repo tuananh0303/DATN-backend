@@ -12,7 +12,6 @@ import { UUID } from 'crypto';
 import { PersonRoleEnum } from './enums/person-role.enum';
 import { Facility } from 'src/facilities/facility.entity';
 import { Booking } from 'src/bookings/booking.entity';
-import { FavortiteFacility } from 'src/favorite-facilities/favorite-facility.entity';
 
 @Entity()
 export class Person {
@@ -95,12 +94,6 @@ export class Person {
 
   @OneToMany(() => Booking, (booking) => booking.player)
   bookings: Booking[];
-
-  @OneToMany(
-    () => FavortiteFacility,
-    (favoriteFacility) => favoriteFacility.player,
-  )
-  favoriteFacilities: FavortiteFacility[];
 
   @AfterLoad()
   afterLoad() {

@@ -11,7 +11,7 @@ export class FavortiteFacility {
   @PrimaryColumn()
   facilityId: UUID;
 
-  @ManyToOne(() => Person, (person) => person.favoriteFacilities, {
+  @ManyToOne(() => Person, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({

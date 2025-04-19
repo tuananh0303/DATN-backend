@@ -70,4 +70,25 @@ export class FavoriteFacilityService implements IFavoriteFacility {
       message: 'Delete favorite facility successful',
     };
   }
+
+  public async getByPlayer(playerId: UUID): Promise<Facility[]> {
+    const favoriteFacilities = await this.favoriteFacilityRepository.find({
+      relations: {
+        facility: {
+          fieldGroups: {
+            sports: true,
+          },
+        },
+      },
+      where: {
+        player: {
+          id: playerId,
+        },
+      },
+    });
+
+    return favoriteFacilities.map(
+      (favoriteFacility) => favoriteFacility.facility,
+    );
+  }
 }

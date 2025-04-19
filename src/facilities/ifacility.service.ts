@@ -90,4 +90,6 @@ export interface IFacilityService {
     facilityId: UUID,
     playerId: UUID,
   ): Promise<{ message: string }>;
+
+  getFavorite(playerId: UUID): Promise<any[]>;
 }

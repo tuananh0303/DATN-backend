@@ -725,4 +725,25 @@ export class FacilityService implements IFacilityService {
   ): Promise<{ message: string }> {
     return await this.favoriteFacilityService.delete(playerId, facilityId);
   }
+
+  public async getFavorite(playerId: UUID): Promise<any[]> {
+    const facilities = await this.favoriteFacilityService.getByPlayer(playerId);
+
+    return facilities.map(({ fieldGroups, ...facility }) => ({
+      ...facility,
+      sports: fieldGroups
+        .map((fieldGroup) => fieldGroup.sports)
+        .flat()
+        .filter(
+          (item, index, self) =>
+            index === self.findIndex((t) => t.id === item.id),
+        ),
+      minPrice: Math.min(
+        ...fieldGroups.map((fieldGroup) => fieldGroup.basePrice),
+      ),
+      maxPrice: Math.max(
+        ...fieldGroups.map((fieldGroup) => fieldGroup.basePrice),
+      ),
+    }));
+  }
 }

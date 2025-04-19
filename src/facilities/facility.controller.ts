@@ -83,6 +83,15 @@ export class FacilityController {
   }
 
   @ApiOperation({
+    summary: 'get favorite facility by player (role: player)',
+  })
+  @Get('/favorite')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public getFavorite(@ActivePerson('sub') playerId: UUID) {
+    return this.facilityService.getFavorite(playerId);
+  }
+
+  @ApiOperation({
     summary: 'get drop down info of facility (role: owner)',
   })
   @Get('drop-down')
