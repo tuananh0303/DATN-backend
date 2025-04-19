@@ -116,23 +116,23 @@ export class BookingService implements IBookingService {
         createDraftBookingDto.endTime,
         facility.openTime1,
         facility.closeTime1,
-      ) ||
-      (facility.openTime2 &&
-        facility.closeTime2 &&
-        isBetweenTime(
-          createDraftBookingDto.startTime,
-          createDraftBookingDto.endTime,
-          facility.openTime2,
-          facility.closeTime2,
-        )) ||
-      (facility.openTime3 &&
-        facility.closeTime3 &&
-        isBetweenTime(
-          createDraftBookingDto.startTime,
-          createDraftBookingDto.endTime,
-          facility.openTime3,
-          facility.closeTime3,
-        ))
+      ) &&
+      facility.openTime2 &&
+      facility.closeTime2 &&
+      isBetweenTime(
+        createDraftBookingDto.startTime,
+        createDraftBookingDto.endTime,
+        facility.openTime2,
+        facility.closeTime2,
+      ) &&
+      facility.openTime3 &&
+      facility.closeTime3 &&
+      isBetweenTime(
+        createDraftBookingDto.startTime,
+        createDraftBookingDto.endTime,
+        facility.openTime3,
+        facility.closeTime3,
+      )
     ) {
       throw new BadRequestException(
         'Booking time not between open time and close time',
