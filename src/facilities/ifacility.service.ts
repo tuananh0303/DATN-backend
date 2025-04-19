@@ -83,4 +83,11 @@ export interface IFacilityService {
   getTopFacilities(): Promise<any[]>;
 
   addRating(fieldId: number, rating: number): Promise<Facility>;
+
+  addFavorite(facilityId: UUID, playerId: UUID): Promise<{ message: string }>;
+
+  deleteFavorite(
+    facilityId: UUID,
+    playerId: UUID,
+  ): Promise<{ message: string }>;
 }

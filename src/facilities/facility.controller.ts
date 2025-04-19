@@ -246,4 +246,28 @@ export class FacilityController {
   public getActiveTime(@Param('facilityId', ParseUUIDPipe) facilityId: UUID) {
     return this.facilityService.getActiveTime(facilityId);
   }
+
+  @ApiOperation({
+    summary: 'add the facility to favorite list (role: player)',
+  })
+  @Post(':facilityId/favorite')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public AddFavorite(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.facilityService.addFavorite(facilityId, playerId);
+  }
+
+  @ApiOperation({
+    summary: 'delete the favorite facility (role: player)',
+  })
+  @Delete(':facilityId/favorite')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public deleteFavorite(
+    @Param('facilityId', ParseUUIDPipe) facilityId: UUID,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.facilityService.deleteFavorite(facilityId, playerId);
+  }
 }

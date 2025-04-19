@@ -27,6 +27,7 @@ import { AdditionalServiceModule } from './additional-services/additional-servic
 import { PaymentModule } from './payments/payment.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReviewModule } from './reviews/review.module';
+import { FavortiteFacilityModule } from './favorite-facilities/favortite-facility.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { ReviewModule } from './reviews/review.module';
     PaymentModule,
     ScheduleModule.forRoot(),
     ReviewModule,
+    FavortiteFacilityModule,
   ],
   controllers: [AppController],
   providers: [

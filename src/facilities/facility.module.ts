@@ -10,6 +10,7 @@ import { LicenseModule } from 'src/licenses/license.module';
 import { CloudUploaderModule } from 'src/cloud-uploader/cloud-uploader.module';
 import { ApprovalModule } from 'src/approvals/approval.module';
 import { SportModule } from 'src/sports/sport.module';
+import { FavortiteFacilityModule } from 'src/favorite-facilities/favortite-facility.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { SportModule } from 'src/sports/sport.module';
     CloudUploaderModule,
     forwardRef(() => ApprovalModule),
     SportModule,
+    FavortiteFacilityModule,
   ],
   providers: [FacilityService],
   controllers: [FacilityController],

@@ -22,6 +22,7 @@ import { ApprovalTypeEnum } from 'src/approvals/enums/approval-type.enum';
 import { SportService } from 'src/sports/sport.service';
 import { DeleteImageDto } from './dtos/requests/delete-image.dto';
 import { UpdateBaseInfo } from './dtos/requests/update-base-info.dto';
+import { FavoriteFacilityService } from 'src/favorite-facilities/favorite-facility.service';
 
 @Injectable()
 export class FacilityService implements IFacilityService {
@@ -67,6 +68,10 @@ export class FacilityService implements IFacilityService {
      * inject SportService
      */
     private readonly sportService: SportService,
+    /**
+     * inject FavoriteFacilitytService
+     */
+    private readonly favoriteFacilityService: FavoriteFacilityService,
   ) {}
 
   public async findOneByIdAndOwnerId(
@@ -693,5 +698,31 @@ export class FacilityService implements IFacilityService {
     }
 
     return facility!;
+  }
+
+  public async addFavorite(
+    facilityId: UUID,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    const facility = await this.facilityRepository
+      .findOneOrFail({
+        where: {
+          id: facilityId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the facility');
+      });
+
+    const player = await this.personService.findOneById(playerId);
+
+    return this.favoriteFacilityService.create(facility, player);
+  }
+
+  public async deleteFavorite(
+    facilityId: UUID,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    return await this.favoriteFacilityService.delete(playerId, facilityId);
   }
 }
