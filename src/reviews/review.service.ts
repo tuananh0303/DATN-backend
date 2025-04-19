@@ -203,4 +203,26 @@ export class ReviewService implements IReviewService {
       },
     });
   }
+
+  public async getById(reviewId: number): Promise<Review> {
+    return this.reviewRepository
+      .findOneOrFail({
+        relations: {
+          booking: {
+            bookingSlots: {
+              field: true,
+            },
+            additionalServices: {
+              service: true,
+            },
+          },
+        },
+        where: {
+          id: reviewId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the review');
+      });
+  }
 }

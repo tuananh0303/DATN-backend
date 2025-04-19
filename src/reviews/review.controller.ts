@@ -78,4 +78,13 @@ export class ReviewController {
   ) {
     return this.reviewService.getManyByFacility(facilityId);
   }
+
+  @ApiOperation({
+    summary: 'get reviery by id (role: none)',
+  })
+  @Get(':reviewId')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getById(@Param('reviewId', ParseIntPipe) reviewId: number) {
+    return this.reviewService.getById(reviewId);
+  }
 }

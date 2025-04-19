@@ -18,4 +18,6 @@ export interface IReviewService {
   ): Promise<{ message: string }>;
 
   getManyByFacility(facilityId: UUID): Promise<Review[]>;
+
+  getById(reviewId: number): Promise<Review>;
 }
