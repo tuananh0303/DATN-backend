@@ -279,4 +279,15 @@ export class FacilityController {
   ) {
     return this.facilityService.deleteFavorite(facilityId, playerId);
   }
+
+  // sync all facilities to elasticsearch (role: admin)
+  @ApiOperation({
+    summary: 'sync all facilities to elasticsearch (role: admin)',
+  })
+  @Post('sync-elasticsearch')
+  @AuthRoles(AuthRoleEnum.ADMIN)
+  async syncElasticsearch() {
+    await this.facilityService.syncAllFacilitiesToElasticsearch();
+    return { message: 'Elasticsearch sync completed successfully' };
+  }
 }

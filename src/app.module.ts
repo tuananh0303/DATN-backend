@@ -28,6 +28,7 @@ import { PaymentModule } from './payments/payment.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReviewModule } from './reviews/review.module';
 import { FavortiteFacilityModule } from './favorite-facilities/favortite-facility.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { FavortiteFacilityModule } from './favorite-facilities/favortite-facilit
     ScheduleModule.forRoot(),
     ReviewModule,
     FavortiteFacilityModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [
