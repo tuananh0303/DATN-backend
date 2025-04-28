@@ -802,8 +802,11 @@ export class FacilityService implements IFacilityService {
   ): Promise<void> {
     try {
       await this.elasticsearchService.indexFacility(facility);
-    } catch (error: any) {
-      throw new Error(`Failed to index facility: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to index facility: ${error.message}`);
+      }
+      throw new Error('Failed to index facility');
     }
   }
 
@@ -815,10 +818,13 @@ export class FacilityService implements IFacilityService {
   ): Promise<void> {
     try {
       await this.elasticsearchService.indexFacility(facility);
-    } catch (error: any) {
-      throw new Error(
-        `Failed to update facility in Elasticsearch: ${error.message}`,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to update facility in Elasticsearch: ${error.message}`,
+        );
+      }
+      throw new Error('Failed to update facility in Elasticsearch');
     }
   }
 
@@ -833,10 +839,13 @@ export class FacilityService implements IFacilityService {
         this.elasticsearchService.getFacilitiesIndex(),
         facilityId.toString(),
       );
-    } catch (error: any) {
-      throw new Error(
-        `Failed to delete facility from Elasticsearch: ${error.message}`,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to delete facility from Elasticsearch: ${error.message}`,
+        );
+      }
+      throw new Error('Failed to delete facility from Elasticsearch');
     }
   }
 
@@ -854,10 +863,13 @@ export class FacilityService implements IFacilityService {
         this.elasticsearchService.getFacilitiesIndex(),
         facilities,
       );
-    } catch (error: any) {
-      throw new Error(
-        `Failed to sync facilities to Elasticsearch: ${error.message}`,
-      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to sync facilities to Elasticsearch: ${error.message}`,
+        );
+      }
+      throw new Error('Failed to sync facilities to Elasticsearch');
     }
   }
 }

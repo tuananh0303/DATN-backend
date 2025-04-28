@@ -1,37 +1,73 @@
-version: '3'
+version: '3.8'
+
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: elasticsearch
+  postgres:
+    container_name: postgres-db
+    image: postgres:latest
+    ports:
+      - "5432:5432"
     environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 260708102001
+      POSTGRES_DB: sport-booking
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
       - discovery.type=single-node
+      - bootstrap.memory_lock=true
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
       - "9300:9300"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
-      - elastic
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
 
-  # Kibana (tùy chọn) - giao diện quản lý Elasticsearch
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
     container_name: kibana
-    ports:
-      - "5601:5601"
+    image: docker.elastic.co/kibana/kibana:8.13.1
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
     depends_on:
       - elasticsearch
     networks:
-      - elastic
-
-volumes:
-  elasticsearch_data:
-    driver: local
+      - app_network
+    restart: unless-stopped
 
 networks:
-  elastic:
+  app_network:
     driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  elasticsearch_data:
+    driver: local

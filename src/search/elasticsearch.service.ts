@@ -19,7 +19,7 @@ export class ElasticsearchService implements OnModuleInit {
     try {
       await this.checkIndices();
     } catch (error: any) {
-      this.logger.error('Elasticsearch initialization error', error.stack);
+      this.logger.error('Elasticsearch initialization error', error?.stack);
     }
   }
 
@@ -32,7 +32,7 @@ export class ElasticsearchService implements OnModuleInit {
       if (!indexExists) {
         await this.createFacilitiesIndex();
         this.logger.log(
-          `Index ${this.indices.facilities} created successfully`
+          `Index ${this.indices.facilities} created successfully`,
         );
       }
     } catch (error: any) {
@@ -47,60 +47,60 @@ export class ElasticsearchService implements OnModuleInit {
   private async createFacilitiesIndex() {
     try {
       await this.elasticsearchService.indices.create({
-        index: this.indices.facilities
+        index: this.indices.facilities,
       });
 
       await this.elasticsearchService.indices.putMapping({
         index: this.indices.facilities,
         properties: {
-          id: { type: "keyword" },
-          name: { 
-            type: "text", 
-            analyzer: "standard", 
-            fields: { 
-              keyword: { type: "keyword" } 
-            }
+          id: { type: 'keyword' },
+          name: {
+            type: 'text',
+            analyzer: 'standard',
+            fields: {
+              keyword: { type: 'keyword' },
+            },
           },
-          description: { type: "text", analyzer: "standard" },
-          location: { 
-            type: "text", 
-            analyzer: "standard", 
-            fields: { 
-              keyword: { type: "keyword" } 
-            }
+          description: { type: 'text', analyzer: 'standard' },
+          location: {
+            type: 'text',
+            analyzer: 'standard',
+            fields: {
+              keyword: { type: 'keyword' },
+            },
           },
-          avgRating: { type: "float" },
-          numberOfRating: { type: "integer" },
-          status: { type: "keyword" },
-          imagesUrl: { type: "keyword" },
-          openTime1: { type: "keyword" },
-          closeTime1: { type: "keyword" },
-          openTime2: { type: "keyword" },
-          closeTime2: { type: "keyword" },
-          openTime3: { type: "keyword" },
-          closeTime3: { type: "keyword" },
-          numberOfShifts: { type: "integer" },
+          avgRating: { type: 'float' },
+          numberOfRating: { type: 'integer' },
+          status: { type: 'keyword' },
+          imagesUrl: { type: 'keyword' },
+          openTime1: { type: 'keyword' },
+          closeTime1: { type: 'keyword' },
+          openTime2: { type: 'keyword' },
+          closeTime2: { type: 'keyword' },
+          openTime3: { type: 'keyword' },
+          closeTime3: { type: 'keyword' },
+          numberOfShifts: { type: 'integer' },
           sports: {
-            type: "nested",
+            type: 'nested',
             properties: {
-              id: { type: "integer" },
-              name: { 
-                type: "text", 
-                fields: { 
-                  keyword: { type: "keyword" } 
-                } 
-              }
-            }
+              id: { type: 'integer' },
+              name: {
+                type: 'text',
+                fields: {
+                  keyword: { type: 'keyword' },
+                },
+              },
+            },
           },
           fieldGroups: {
-            type: "nested",
+            type: 'nested',
             properties: {
-              id: { type: "integer" },
-              name: { type: "text" }
-            }
+              id: { type: 'integer' },
+              name: { type: 'text' },
+            },
           },
-          createdAt: { type: "date" },
-          updatedAt: { type: "date" }
+          createdAt: { type: 'date' },
+          updatedAt: { type: 'date' },
         }
       });
 
@@ -112,9 +112,9 @@ export class ElasticsearchService implements OnModuleInit {
           analysis: {
             analyzer: {
               standard: {
-                type: "standard"
-              }
-            }
+                type: 'standard',
+              },
+            },
           }
         }
       });
@@ -176,15 +176,25 @@ export class ElasticsearchService implements OnModuleInit {
     };
 
     // Add sports information if available
-    if (facility.licenses && Array.isArray(facility.licenses) && facility.licenses.length > 0) {
-      document.sports = facility.licenses.map((license: any) => ({
-        id: license.sport?.id,
-        name: license.sport?.name,
-      })).filter((sport: any) => sport.id && sport.name);
+    if (
+      facility.licenses &&
+      Array.isArray(facility.licenses) &&
+      facility.licenses.length > 0
+    ) {
+      document.sports = facility.licenses
+        .map((license: any) => ({
+          id: license.sport?.id,
+          name: license.sport?.name,
+        }))
+        .filter((sport: any) => sport.id && sport.name);
     }
 
     // Add field groups information if available
-    if (facility.fieldGroups && Array.isArray(facility.fieldGroups) && facility.fieldGroups.length > 0) {
+    if (
+      facility.fieldGroups &&
+      Array.isArray(facility.fieldGroups) &&
+      facility.fieldGroups.length > 0
+    ) {
       document.fieldGroups = facility.fieldGroups.map((group: any) => ({
         id: group.id,
         name: group.name,
@@ -194,10 +204,7 @@ export class ElasticsearchService implements OnModuleInit {
     return document;
   }
 
-  async search<T>(
-    index: string,
-    query: Record<string, any>,
-  ): Promise<any> {
+  async search<T>(index: string, query: Record<string, any>): Promise<any> {
     try {
       return await this.elasticsearchService.search({
         index,
@@ -259,9 +266,9 @@ export class ElasticsearchService implements OnModuleInit {
         this.mapFacilityToDocument(doc),
       ]);
 
-      return await this.elasticsearchService.bulk({ 
+      return await this.elasticsearchService.bulk({
         body,
-        refresh: true 
+        refresh: true,
       });
     } catch (error: any) {
       this.logger.error(
@@ -289,4 +296,4 @@ export class ElasticsearchService implements OnModuleInit {
   getFacilitiesIndex(): string {
     return this.indices.facilities;
   }
-} 
+}

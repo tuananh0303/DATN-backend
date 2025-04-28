@@ -13,6 +13,7 @@ import { ElasticsearchService } from './elasticsearch.service';
           configService.get('ELASTICSEARCH_NODE') || 'http://localhost:9200',
         maxRetries: 10,
         requestTimeout: 60000,
+        apiVersion: '8',
       }),
       inject: [ConfigService],
     }),

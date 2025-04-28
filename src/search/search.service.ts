@@ -3,6 +3,44 @@ import { ElasticsearchService } from './elasticsearch.service';
 import { SearchQueryDto } from './dtos/search-query.dto';
 import { FacilityStatusEnum } from '../facilities/enums/facility-status.enum';
 
+// Khai báo các interface cho kết quả tìm kiếm
+interface ElasticsearchSource {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  avgRating: number;
+  numberOfRating: number;
+  status: FacilityStatusEnum;
+  imagesUrl?: string[];
+  openTime1: string;
+  closeTime1: string;
+  openTime2?: string;
+  closeTime2?: string;
+  openTime3?: string;
+  closeTime3?: string;
+  numberOfShifts: number;
+  sports?: any[];
+  fieldGroups?: any[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ElasticsearchHit {
+  _source: ElasticsearchSource;
+  _score: number;
+  highlight?: Record<string, string[]>;
+}
+
+interface ElasticsearchResponse {
+  hits: {
+    hits: ElasticsearchHit[];
+    total: {
+      value: number;
+    };
+  };
+}
+
 @Injectable()
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
@@ -71,37 +109,38 @@ export class SearchService {
 
       // Add sport filter if provided
       if (sportIds && sportIds.length > 0) {
-        const sportsFilter = sportIds.map(sportId => ({
+        const sportsFilter = sportIds.map((sportId) => ({
           nested: {
             path: 'sports',
             query: {
               term: {
-                'sports.id': sportId
-              }
-            }
-          }
+                'sports.id': sportId,
+              },
+            },
+          },
         }));
-        
+
         filter.push({
           bool: {
             should: sportsFilter,
-            minimum_should_match: 1
-          }
+            minimum_should_match: 1,
+          },
         });
       }
 
       // Build sort configuration
       const sort: any[] = [];
       if (sortBy) {
+        // Add sort configuration only if we have data
         sort.push({
           [sortBy]: {
             order: sortOrder || 'desc',
           },
         });
       } else {
-        // Default sort by average rating
+        // Default sort by createdAt instead of avgRating to avoid errors when no data
         sort.push({
-          avgRating: {
+          createdAt: {
             order: 'desc',
           },
         });
@@ -133,18 +172,33 @@ export class SearchService {
         },
       };
 
-      // Execute search
-      const searchResults = await this.elasticsearchService.search(
-        this.elasticsearchService.getFacilitiesIndex(),
-        queryObject,
-      );
+      // Execute search with try/catch
+      let searchResults;
+      try {
+        searchResults = (await this.elasticsearchService.search(
+          this.elasticsearchService.getFacilitiesIndex(),
+          queryObject,
+        )) as ElasticsearchResponse;
+      } catch (searchError: unknown) {
+        this.logger.error(
+          `Search failed: ${searchError instanceof Error ? searchError.message : 'Unknown error'}`,
+        );
+        return {
+          items: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+          message: 'Search failed, please try again later',
+        };
+      }
 
       const hits = searchResults.hits.hits;
       const total = searchResults.hits.total.value || 0;
 
       // Transform search results
       const facilities = hits.map((hit) => {
-        const source = hit._source as any;
+        const source = hit._source;
         const highlight = hit.highlight || {};
 
         return {
@@ -180,8 +234,15 @@ export class SearchService {
         limit,
         totalPages: Math.ceil(total / limit),
       };
-    } catch (error: any) {
-      this.logger.error(`Error searching facilities: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error searching facilities: ${error.message}`,
+          error.stack,
+        );
+      } else {
+        this.logger.error('Error searching facilities: Unknown error');
+      }
       // Return empty results on error
       return {
         items: [],
@@ -189,7 +250,7 @@ export class SearchService {
         page,
         limit,
         totalPages: 0,
-        error: 'An error occurred while searching facilities'
+        error: 'An error occurred while searching facilities',
       };
     }
   }
@@ -203,19 +264,28 @@ export class SearchService {
 
       await this.elasticsearchService.bulkIndex(
         this.elasticsearchService.getFacilitiesIndex(),
-        facilities
+        facilities,
       );
 
-      return { 
-        success: true, 
-        message: `Successfully synced ${facilities.length} facilities to Elasticsearch` 
+      return {
+        success: true,
+        message: `Successfully synced ${facilities.length} facilities to Elasticsearch`,
       };
-    } catch (error: any) {
-      this.logger.error(`Error syncing facilities to Elasticsearch: ${error.message}`, error.stack);
-      return { 
-        success: false, 
-        message: `Failed to sync facilities: ${error.message}` 
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error syncing facilities to Elasticsearch: ${error.message}`,
+          error.stack,
+        );
+        return {
+          success: false,
+          message: `Failed to sync facilities: ${error.message}`,
+        };
+      }
+      return {
+        success: false,
+        message: 'Failed to sync facilities: Unknown error',
       };
     }
   }
-} 
+}

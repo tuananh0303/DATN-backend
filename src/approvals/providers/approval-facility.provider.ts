@@ -97,7 +97,18 @@ export class ApprovalFacilityProvider implements ApprovalAbstract {
             facilityId,
             manager,
           );
-        await this.elasticsearchService.indexFacility(updatedFacility);
+
+        // Đẩy việc cập nhật Elasticsearch ra khỏi transaction chính để tăng tốc độ
+        setTimeout(() => {
+          this.elasticsearchService
+            .indexFacility(updatedFacility)
+            .catch((error: Error) => {
+              this.logger.error(
+                `Background elasticsearch indexing failed: ${error.message}`,
+                error.stack,
+              );
+            });
+        }, 0);
       } catch (error) {
         this.logger.error(
           'Failed to index approved facility to Elasticsearch:',
@@ -146,10 +157,17 @@ export class ApprovalFacilityProvider implements ApprovalAbstract {
         await manager.save(facility);
 
         // Remove the rejected facility from Elasticsearch
-        await this.elasticsearchService.delete(
-          this.elasticsearchService.getFacilitiesIndex(),
-          facilityId,
-        );
+        // Đẩy việc cập nhật Elasticsearch ra khỏi transaction chính để tăng tốc độ
+        setTimeout(() => {
+          this.elasticsearchService
+            .delete(this.elasticsearchService.getFacilitiesIndex(), facilityId)
+            .catch((error: Error) => {
+              this.logger.error(
+                `Background elasticsearch deletion failed: ${error.message}`,
+                error.stack,
+              );
+            });
+        }, 0);
       } catch (error) {
         this.logger.error(
           'Failed to remove rejected facility from Elasticsearch:',

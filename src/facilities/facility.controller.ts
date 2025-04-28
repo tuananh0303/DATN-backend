@@ -290,4 +290,14 @@ export class FacilityController {
     await this.facilityService.syncAllFacilitiesToElasticsearch();
     return { message: 'Elasticsearch sync completed successfully' };
   }
+
+  // DEV ONLY - sync all facilities to elasticsearch without auth
+  @ApiOperation({
+    summary: 'DEV ONLY - sync all facilities to elasticsearch without auth',
+  })
+  @Post('dev-sync-elasticsearch')
+  async devSyncElasticsearch() {
+    await this.facilityService.syncAllFacilitiesToElasticsearch();
+    return { message: 'Elasticsearch sync completed successfully' };
+  }
 }
