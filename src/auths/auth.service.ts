@@ -120,4 +120,11 @@ export class AuthService implements IAuthService {
       accessToken,
     };
   }
+
+  public async verifyAccessToken(token: string): Promise<ActivePersonData> {
+    return this.tokenProvider.verify(
+      token,
+      this.configService.get<string>('JWT_SECRET')!,
+    );
+  }
 }
