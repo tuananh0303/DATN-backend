@@ -217,7 +217,7 @@ export class BookingService implements IBookingService {
           createDraftBookingDto.startTime,
         );
 
-        fieldPrice = field.fieldGroup.basePrice * playTime;
+        fieldPrice += field.fieldGroup.basePrice * playTime;
 
         if (field.fieldGroup.numberOfPeaks > 0) {
           const overlapPeak = durationOverlapTime(
