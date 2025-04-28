@@ -29,6 +29,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ReviewModule } from './reviews/review.module';
 import { FavortiteFacilityModule } from './favorite-facilities/favortite-facility.module';
 import { SearchModule } from './search/search.module';
+import { ChatModule } from './chats/chat.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { SearchModule } from './search/search.module';
     ReviewModule,
     FavortiteFacilityModule,
     SearchModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
