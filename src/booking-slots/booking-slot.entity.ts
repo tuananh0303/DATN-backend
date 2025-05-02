@@ -1,11 +1,13 @@
 import { Booking } from 'src/bookings/booking.entity';
 import { Field } from 'src/fields/field.entity';
+import { Playmate } from 'src/playmates/entities/playmate.entity';
 import {
   AfterLoad,
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -31,6 +33,9 @@ export class BookingSlot {
   })
   @JoinColumn()
   booking: Booking;
+
+  @OneToOne(() => Playmate, (playmate) => playmate.bookingSlot)
+  playmate: Playmate;
 
   @AfterLoad()
   afterLoad() {

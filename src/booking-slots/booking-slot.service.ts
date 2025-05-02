@@ -3,10 +3,21 @@ import { IBookingSlotService } from './ibooking-slot.service';
 import { BookingSlot } from './booking-slot.entity';
 import { Booking } from 'src/bookings/booking.entity';
 import { Field } from 'src/fields/field.entity';
-import { EntityManager } from 'typeorm';
+import { EntityManager, LessThan, MoreThan, Repository } from 'typeorm';
+import { UUID } from 'crypto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
 
 @Injectable()
 export class BookingSlotService implements IBookingSlotService {
+  constructor(
+    /**
+     * inject BookingSlotRepository
+     */
+    @InjectRepository(BookingSlot)
+    private readonly bookingSlotRepository: Repository<BookingSlot>,
+  ) {}
+
   public async createWithTransaction(
     field: Field,
     date: Date,
@@ -26,5 +37,52 @@ export class BookingSlotService implements IBookingSlotService {
         'An error occurred when create booking slot',
       );
     }
+  }
+
+  public async findOneByIdAndPlayer(
+    bookingSlotId: number,
+    playerId: UUID,
+    relations?: string[],
+  ): Promise<BookingSlot> {
+    return await this.bookingSlotRepository
+      .findOneOrFail({
+        relations,
+        where: {
+          id: bookingSlotId,
+          booking: {
+            player: {
+              id: playerId,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new BadRequestException(
+          `Not found the booking slot with id: ${bookingSlotId} of player: ${playerId}`,
+        );
+      });
+  }
+
+  public async getManyForPlaymate(playerId: UUID): Promise<BookingSlot[]> {
+    const now = new Date();
+
+    const bookingSlots = await this.bookingSlotRepository.find({
+      relations: {
+        booking: true,
+      },
+      where: {
+        booking: {
+          player: {
+            id: playerId,
+          },
+          payment: {
+            status: PaymentStatusEnum.PAID,
+          },
+        },
+        date: MoreThan(now),
+      },
+    });
+
+    return bookingSlots;
   }
 }

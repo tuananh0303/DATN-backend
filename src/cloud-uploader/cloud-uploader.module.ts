@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CloudUploaderService } from './cloud-uploader.service';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryProvider } from './providers/cloudinary.provider';
+import { CloudUploaderController } from './cloud-uploader.controller';
 
 @Module({
   providers: [
@@ -19,5 +20,6 @@ import { CloudinaryProvider } from './providers/cloudinary.provider';
     },
   ],
   exports: [CloudUploaderService],
+  controllers: [CloudUploaderController],
 })
 export class CloudUploaderModule {}
