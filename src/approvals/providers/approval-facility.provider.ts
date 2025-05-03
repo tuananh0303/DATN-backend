@@ -91,21 +91,25 @@ export class ApprovalFacilityProvider implements ApprovalAbstract {
         await manager.save(approve);
         await manager.save(facility);
 
-        // Index the approved facility to Elasticsearch
-        const updatedFacility =
-          await this.facilityService.findOneByIdWithTransaction(
-            facilityId,
-            manager,
-          );
-
         // Đẩy việc cập nhật Elasticsearch ra khỏi transaction chính để tăng tốc độ
         setTimeout(() => {
-          this.elasticsearchService
-            .indexFacility(updatedFacility)
-            .catch((error: Error) => {
+          // Không sử dụng async trong hàm setTimeout để tránh lỗi lint
+          this.facilityService.getByFacility(facilityId)
+            .then((facilityWithRelations) => {
+              // Index facility đã load đầy đủ relations vào Elasticsearch
+              this.elasticsearchService
+                .indexFacility(facilityWithRelations)
+                .catch((error: Error) => {
+                  this.logger.error(
+                    `Background elasticsearch indexing failed: ${error.message}`,
+                    error.stack,
+                  );
+                });
+            })
+            .catch((err: Error) => {
               this.logger.error(
-                `Background elasticsearch indexing failed: ${error.message}`,
-                error.stack,
+                `Failed to get facility with relations for indexing: ${err.message}`,
+                err.stack,
               );
             });
         }, 0);
@@ -156,7 +160,6 @@ export class ApprovalFacilityProvider implements ApprovalAbstract {
         await manager.save(approval);
         await manager.save(facility);
 
-        // Remove the rejected facility from Elasticsearch
         // Đẩy việc cập nhật Elasticsearch ra khỏi transaction chính để tăng tốc độ
         setTimeout(() => {
           this.elasticsearchService

@@ -1,7 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ElasticsearchService } from './elasticsearch.service';
 import { SearchQueryDto } from './dtos/search-query.dto';
 import { FacilityStatusEnum } from '../facilities/enums/facility-status.enum';
+import { FacilityService } from '../facilities/facility.service';
+import { Cron } from '@nestjs/schedule';
 
 // Khai báo các interface cho kết quả tìm kiếm
 interface ElasticsearchSource {
@@ -24,6 +26,8 @@ interface ElasticsearchSource {
   fieldGroups?: any[];
   createdAt: string;
   updatedAt: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 interface ElasticsearchHit {
@@ -45,7 +49,23 @@ interface ElasticsearchResponse {
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
 
-  constructor(private readonly elasticsearchService: ElasticsearchService) {}
+  constructor(
+    private readonly elasticsearchService: ElasticsearchService,
+    @Inject(forwardRef(() => FacilityService))
+    private readonly facilityService: FacilityService,
+  ) {}
+
+  // Tự động đồng bộ dữ liệu mỗi 30 phút
+  @Cron('0 */30 * * * *')
+  async scheduleElasticsearchSync() {
+    this.logger.log('Starting scheduled Elasticsearch sync');
+    try {
+      await this.syncAllFacilitiesToElasticsearch();
+      this.logger.log('Scheduled Elasticsearch sync completed successfully');
+    } catch (error) {
+      this.logger.error('Scheduled Elasticsearch sync failed', error);
+    }
+  }
 
   async searchFacilities(searchQueryDto: SearchQueryDto) {
     const {
@@ -68,12 +88,17 @@ export class SearchService {
       const should: any[] = [];
       const filter: any[] = [];
 
-      // Only search for active facilities
-      filter.push({
-        term: {
-          status: FacilityStatusEnum.ACTIVE,
-        },
-      });
+      // Biến debug - đặt thành true để bỏ qua bộ lọc status
+      const debug = true;
+      
+      // Only search for active facilities 
+      if (!debug) {
+        filter.push({
+          term: {
+            status: FacilityStatusEnum.ACTIVE,
+          },
+        });
+      }
 
       // Add search term for name, description, and location
       if (query && query.trim()) {
@@ -91,7 +116,7 @@ export class SearchService {
       if (location && location.trim()) {
         must.push({
           match: {
-            'location.keyword': location.trim(),
+            location: location.trim(),
           },
         });
       }
@@ -175,65 +200,63 @@ export class SearchService {
       // Execute search with try/catch
       let searchResults;
       try {
+        // Giảm logging chi tiết query
+        this.logger.log(`Executing search with query: ${query || 'empty'}`);
         searchResults = (await this.elasticsearchService.search(
           this.elasticsearchService.getFacilitiesIndex(),
           queryObject,
         )) as ElasticsearchResponse;
+        
+        // Không log toàn bộ kết quả tìm kiếm
+        const totalHits = searchResults.hits?.total?.value || 0;
+        this.logger.log(`Found ${totalHits} results`);
+        
+        if (!searchResults.hits || !searchResults.hits.hits || searchResults.hits.hits.length === 0) {
+          this.logger.log('No search results found');
+        }
       } catch (searchError: unknown) {
         this.logger.error(
           `Search failed: ${searchError instanceof Error ? searchError.message : 'Unknown error'}`,
         );
-        return {
-          items: [],
-          total: 0,
-          page,
-          limit,
-          totalPages: 0,
-          message: 'Search failed, please try again later',
-        };
+        return [];
       }
 
       const hits = searchResults.hits.hits;
-      const total = searchResults.hits.total.value || 0;
-
-      // Transform search results
-      const facilities = hits.map((hit) => {
+      
+      // Transform search results to match the format from getByFacility
+      return hits.map((hit) => {
         const source = hit._source;
-        const highlight = hit.highlight || {};
-
+        
         return {
           id: source.id,
           name: source.name,
-          description: source.description,
+          description: source.description || '',
           location: source.location,
-          avgRating: source.avgRating,
-          numberOfRating: source.numberOfRating,
+          avgRating: source.avgRating || 0,
+          numberOfRating: source.numberOfRating || 0,
           status: source.status,
           imagesUrl: source.imagesUrl || [],
           openTime1: source.openTime1,
           closeTime1: source.closeTime1,
-          openTime2: source.openTime2,
-          closeTime2: source.closeTime2,
-          openTime3: source.openTime3,
-          closeTime3: source.closeTime3,
-          numberOfShifts: source.numberOfShifts,
-          sports: source.sports || [],
-          fieldGroups: source.fieldGroups || [],
+          openTime2: source.openTime2 || null,
+          closeTime2: source.closeTime2 || null, 
+          openTime3: source.openTime3 || null,
+          closeTime3: source.closeTime3 || null,
+          numberOfShifts: source.numberOfShifts || 1,
           createdAt: source.createdAt,
           updatedAt: source.updatedAt,
-          score: hit._score,
-          highlight,
+          // Sports data formatted to match the expected response
+          sports: Array.isArray(source.sports) 
+            ? source.sports.map((sport) => ({
+                id: sport.id,
+                name: sport.name,
+              })) 
+            : [],
+          // Min and max price values
+          minPrice: source.minPrice || 0,
+          maxPrice: source.maxPrice || 0
         };
       });
-
-      // Return paginated results
-      return {
-        items: facilities,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
     } catch (error: unknown) {
       if (error instanceof Error) {
         this.logger.error(
@@ -244,14 +267,23 @@ export class SearchService {
         this.logger.error('Error searching facilities: Unknown error');
       }
       // Return empty results on error
-      return {
-        items: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-        error: 'An error occurred while searching facilities',
-      };
+      return [];
+    }
+  }
+
+  /**
+   * Synchronize all facilities to Elasticsearch
+   * @returns Promise with message
+   */
+  async syncAllFacilitiesToElasticsearch(): Promise<{ message: string }> {
+    try {
+      this.logger.log('Starting facility synchronization with Elasticsearch');
+      await this.facilityService.syncAllFacilitiesToElasticsearch();
+      this.logger.log('Facility synchronization completed');
+      return { message: 'All facilities synchronized to Elasticsearch successfully' };
+    } catch (error) {
+      this.logger.error('Failed to sync facilities to Elasticsearch', error);
+      throw error;
     }
   }
 

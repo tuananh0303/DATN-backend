@@ -24,9 +24,12 @@ import { DeleteImageDto } from './dtos/requests/delete-image.dto';
 import { UpdateBaseInfo } from './dtos/requests/update-base-info.dto';
 import { FavoriteFacilityService } from 'src/favorite-facilities/favorite-facility.service';
 import { ElasticsearchService } from 'src/search/elasticsearch.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class FacilityService implements IFacilityService {
+  private readonly logger = new Logger(FacilityService.name);
+
   constructor(
     /**
      * inject FacilityRepository
@@ -853,23 +856,71 @@ export class FacilityService implements IFacilityService {
    * Phương thức đồng bộ tất cả facility lên Elasticsearch
    */
   public async syncAllFacilitiesToElasticsearch(): Promise<void> {
-    const facilities = await this.facilityRepository.find();
+    this.logger.log('Synchronizing facilities to Elasticsearch');
+    
+    // Load facilities with all relations needed for complete data
+    const facilities = await this.facilityRepository.find({
+      relations: {
+        fieldGroups: {
+          fields: true,
+          sports: true,
+        },
+        owner: true,
+        licenses: {
+          sport: true,
+        },
+        certificate: true,
+        services: true,
+        vouchers: true,
+      },
+      order: {
+        name: 'ASC',
+      },
+    });
+
     if (facilities.length === 0) {
+      this.logger.log('No facilities found to synchronize');
       return;
     }
 
+    // Transform facilities to include minPrice and maxPrice like getByFacility does
+    const processedFacilities = facilities.map((facility) => ({
+      ...facility,
+      minPrice: facility.fieldGroups.length > 0 
+        ? Math.min(...facility.fieldGroups.map((fieldGroup) => fieldGroup.basePrice))
+        : 0,
+      maxPrice: facility.fieldGroups.length > 0
+        ? Math.max(...facility.fieldGroups.map((fieldGroup) => fieldGroup.basePrice))
+        : 0,
+    }));
+    
     try {
       await this.elasticsearchService.bulkIndex(
         this.elasticsearchService.getFacilitiesIndex(),
-        facilities,
+        processedFacilities,
       );
+      this.logger.log(`Synchronized ${facilities.length} facilities to Elasticsearch`);
     } catch (error: unknown) {
+      this.logger.error('Failed to sync facilities to Elasticsearch', error);
       if (error instanceof Error) {
         throw new Error(
           `Failed to sync facilities to Elasticsearch: ${error.message}`,
         );
       }
       throw new Error('Failed to sync facilities to Elasticsearch');
+    }
+  }
+
+  // Sau mỗi lần cập nhật thông tin của facility, đồng bộ dữ liệu vào Elasticsearch
+  private async syncFacilityToElasticsearch(facilityId: UUID) {
+    try {
+      const facility = await this.findOneById(facilityId);
+      if (facility) {
+        await this.elasticsearchService.indexFacility(facility);
+        console.log(`Synchronized facility ${facilityId} to Elasticsearch`);
+      }
+    } catch (error) {
+      console.error(`Failed to sync facility ${facilityId} to Elasticsearch:`, error);
     }
   }
 }
