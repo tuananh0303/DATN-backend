@@ -232,6 +232,11 @@ export class PlaymateService implements IPlaymateService {
           booking: {
             player: true,
           },
+          field: {
+            fieldGroup: {
+              facility: true,
+            },
+          },
         },
         participants: {
           player: true,
@@ -252,6 +257,11 @@ export class PlaymateService implements IPlaymateService {
           bookingSlot: {
             booking: {
               player: true,
+            },
+            field: {
+              fieldGroup: {
+                facility: true,
+              },
             },
           },
           participants: {
@@ -274,6 +284,11 @@ export class PlaymateService implements IPlaymateService {
       relations: {
         bookingSlot: {
           booking: true,
+          field: {
+            fieldGroup: {
+              facility: true,
+            },
+          },
         },
         participants: {
           player: true,
@@ -297,6 +312,11 @@ export class PlaymateService implements IPlaymateService {
         bookingSlot: {
           booking: {
             player: true,
+          },
+          field: {
+            fieldGroup: {
+              facility: true,
+            },
           },
         },
         participants: true,
