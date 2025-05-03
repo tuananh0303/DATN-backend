@@ -1,7 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PlaymateGenderEnum } from '../enums/playmate-gender.enum';
-import { PlaymateLevelEnum } from '../enums/playmate-level.enum';
-import { PlaymatePaymentType } from '../enums/playmate-payment-type.enum';
 import {
   IsArray,
   IsBoolean,
@@ -14,6 +11,9 @@ import {
   IsUrl,
   MinLength,
 } from 'class-validator';
+import { CostTypeEnum } from '../enums/cost-type.enum';
+import { GenderPreferenceEnum } from '../enums/gender-preference.enum';
+import { SkillLevelEnum } from '../enums/skill-level.enum';
 
 export class CreatePlaymateDto {
   @ApiProperty({
@@ -56,12 +56,12 @@ export class CreatePlaymateDto {
   additionalInfor?: string;
 
   @ApiProperty({
-    enum: PlaymatePaymentType,
-    example: PlaymatePaymentType.TOTAL,
+    enum: CostTypeEnum,
+    example: CostTypeEnum.TOTAL,
   })
-  @IsEnum(PlaymatePaymentType)
+  @IsEnum(CostTypeEnum)
   @IsNotEmpty()
-  paymentType: PlaymatePaymentType;
+  costType: CostTypeEnum;
 
   @ApiProperty({
     type: 'number',
@@ -116,18 +116,18 @@ export class CreatePlaymateDto {
   maxParticipant: number;
 
   @ApiProperty({
-    enum: PlaymateGenderEnum,
-    example: PlaymateGenderEnum.NONE,
+    enum: GenderPreferenceEnum,
+    example: GenderPreferenceEnum.ANY,
   })
-  @IsEnum(PlaymateGenderEnum)
+  @IsEnum(GenderPreferenceEnum)
   @IsNotEmpty()
-  gender: PlaymateGenderEnum;
+  genderPreference: GenderPreferenceEnum;
 
   @ApiProperty({
-    enum: PlaymateLevelEnum,
-    example: PlaymateLevelEnum.NONE,
+    enum: SkillLevelEnum,
+    example: SkillLevelEnum.ANY,
   })
-  @IsEnum(PlaymateLevelEnum)
+  @IsEnum(SkillLevelEnum)
   @IsNotEmpty()
-  level: PlaymateLevelEnum;
+  skillLevel: SkillLevelEnum;
 }

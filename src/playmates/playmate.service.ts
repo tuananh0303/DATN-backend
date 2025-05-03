@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  NotAcceptableException,
   NotFoundException,
 } from '@nestjs/common';
 import { IPlaymateService } from './iplaymate.service';
@@ -15,7 +14,9 @@ import { UpdatePlaymateDto } from './dtos/update-playmate.dto';
 import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
 import { PlaymateParticipant } from './entities/playmate-participant.entity';
 import { BookingSlot } from 'src/booking-slots/booking-slot.entity';
-import { AcceptParticipantPlaymate } from './dtos/accept-participant-playmate.dto';
+import { RegisterPlaymateDto } from './dtos/register-playmate.dto';
+import { ParticipantDto } from './dtos/participant.dto';
+import { ParticipantStatusEnum } from './enums/participant-status.enum';
 
 @Injectable()
 export class PlaymateService implements IPlaymateService {
@@ -132,8 +133,8 @@ export class PlaymateService implements IPlaymateService {
       if (updatePlaymateDto.additionalInfor)
         playmate.additionalInfo = updatePlaymateDto.additionalInfor;
 
-      if (updatePlaymateDto.paymentType)
-        playmate.paymentType = updatePlaymateDto.paymentType;
+      if (updatePlaymateDto.costType)
+        playmate.costType = updatePlaymateDto.costType;
 
       if (updatePlaymateDto.totalCost)
         playmate.totalCost = updatePlaymateDto.totalCost;
@@ -155,9 +156,11 @@ export class PlaymateService implements IPlaymateService {
       if (updatePlaymateDto.maxParticipant)
         playmate.maxParticipant = updatePlaymateDto.maxParticipant;
 
-      if (updatePlaymateDto.gender) playmate.gender = updatePlaymateDto.gender;
+      if (updatePlaymateDto.genderPreference)
+        playmate.genderPreference = updatePlaymateDto.genderPreference;
 
-      if (updatePlaymateDto.level) playmate.level = updatePlaymateDto.level;
+      if (updatePlaymateDto.skillLevel)
+        playmate.skillLevel = updatePlaymateDto.skillLevel;
 
       await this.playmateRepository.save(playmate);
     } catch (error) {
@@ -170,7 +173,7 @@ export class PlaymateService implements IPlaymateService {
   }
 
   public async register(
-    playmateId: UUID,
+    registerPlaymateDto: RegisterPlaymateDto,
     playerId: UUID,
   ): Promise<{ message: string }> {
     const playmate = await this.playmateRepository
@@ -184,7 +187,7 @@ export class PlaymateService implements IPlaymateService {
           },
         },
         where: {
-          id: playmateId,
+          id: registerPlaymateDto.playmateId,
         },
       })
       .catch(() => {
@@ -201,9 +204,18 @@ export class PlaymateService implements IPlaymateService {
       }
     }
 
+    const numberofAcceptParticipant = playmate.participants.filter(
+      (participant) => participant.status === ParticipantStatusEnum.ACCEPTED,
+    ).length;
+
+    if (numberofAcceptParticipant >= playmate.maxParticipant) {
+      throw new BadRequestException('The playmate is max participant');
+    }
+
     const participant = this.playmateParticipantRepository.create({
+      ...registerPlaymateDto,
       playerId,
-      playmateId,
+      playmate,
     });
 
     await this.playmateParticipantRepository.save(participant);
@@ -257,18 +269,49 @@ export class PlaymateService implements IPlaymateService {
     return playmate;
   }
 
-  public async switchAccept(
-    acceptParticipantPlaymate: AcceptParticipantPlaymate,
-    playerId: UUID,
-  ): Promise<{ message: string }> {
-    const playmate = await this.playmateRepository
-      .findOneOrFail({
-        where: {
-          id: acceptParticipantPlaymate.playmateId,
-          participants: {
-            playerId: acceptParticipantPlaymate.playerId,
+  public async getMyPost(playerId: UUID): Promise<Playmate[]> {
+    return await this.playmateRepository.find({
+      relations: {
+        bookingSlot: {
+          booking: true,
+        },
+        participants: {
+          player: true,
+        },
+      },
+      where: {
+        bookingSlot: {
+          booking: {
+            player: {
+              id: playerId,
+            },
           },
         },
+      },
+    });
+  }
+
+  public async getMyRegister(playerId: UUID): Promise<Playmate[]> {
+    return await this.playmateRepository.find({
+      relations: {
+        bookingSlot: {
+          booking: {
+            player: true,
+          },
+        },
+        participants: true,
+      },
+      where: {
+        participants: {
+          playerId,
+        },
+      },
+    });
+  }
+
+  private async findPlaymateAndCheckOwner(playmateId: UUID, ownerId: UUID) {
+    const playmate = await this.playmateRepository
+      .findOneOrFail({
         relations: {
           bookingSlot: {
             booking: {
@@ -277,25 +320,68 @@ export class PlaymateService implements IPlaymateService {
           },
           participants: true,
         },
+        where: {
+          id: playmateId,
+        },
+      })
+      .catch(() => {
+        throw new NotFoundException('Not found the playmate');
+      });
+
+    console.log('owner: ', playmate.bookingSlot.booking.player.id);
+    console.log('player: ', ownerId);
+
+    if (playmate.bookingSlot.booking.player.id !== ownerId) {
+      throw new BadRequestException('You are not the owner of this playmate');
+    }
+
+    return playmate;
+  }
+
+  public async decideRegister(
+    participantDto: ParticipantDto,
+    playerId: UUID,
+    status: ParticipantStatusEnum,
+  ): Promise<{ message: string }> {
+    const playmate = await this.findPlaymateAndCheckOwner(
+      participantDto.playmateId,
+      playerId,
+    );
+
+    // check number of accept must be less than max participant
+    if (status === ParticipantStatusEnum.ACCEPTED) {
+      const numberofAcceptParticipant = playmate.participants.filter(
+        (participant) => participant.status === ParticipantStatusEnum.ACCEPTED,
+      ).length;
+
+      if (numberofAcceptParticipant >= playmate.maxParticipant) {
+        throw new BadRequestException('The playmate is max participant');
+      }
+    }
+
+    const participant = await this.playmateParticipantRepository
+      .findOneOrFail({
+        where: {
+          playerId: participantDto.playerId,
+          playmateId: participantDto.playmateId,
+        },
       })
       .catch(() => {
         throw new NotFoundException(
-          `Not found the playmate with id: ${acceptParticipantPlaymate.playmateId} and participant: ${acceptParticipantPlaymate.playerId}`,
+          'Not found the participant in this playmate',
         );
       });
 
-    if (playmate.bookingSlot.booking.player.id !== playerId) {
-      throw new NotAcceptableException('You are not owner of playmate post');
+    if (participant.status !== ParticipantStatusEnum.PENDING) {
+      throw new BadRequestException('The participant is not pending');
     }
 
-    const participant = playmate.participants[0];
-
-    participant.isAccept = !participant.isAccept;
+    participant.status = status;
 
     await this.playmateParticipantRepository.save(participant);
 
     return {
-      message: 'Switch accept successfull',
+      message: 'Accept participant successful',
     };
   }
 }
