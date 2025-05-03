@@ -3,7 +3,7 @@ import { IBookingSlotService } from './ibooking-slot.service';
 import { BookingSlot } from './booking-slot.entity';
 import { Booking } from 'src/bookings/booking.entity';
 import { Field } from 'src/fields/field.entity';
-import { EntityManager, LessThan, MoreThan, Repository } from 'typeorm';
+import { EntityManager, MoreThan, Repository } from 'typeorm';
 import { UUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
@@ -69,6 +69,11 @@ export class BookingSlotService implements IBookingSlotService {
     const bookingSlots = await this.bookingSlotRepository.find({
       relations: {
         booking: true,
+        field: {
+          fieldGroup: {
+            facility: true,
+          },
+        },
       },
       where: {
         booking: {
