@@ -2,6 +2,8 @@ import { UUID } from 'crypto';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Playmate } from './playmate.entity';
 import { Person } from 'src/people/person.entity';
+import { ParticipantStatusEnum } from '../enums/participant-status.enum';
+import { SkillLevelEnum } from '../enums/skill-level.enum';
 
 @Entity()
 export class PlaymateParticipant {
@@ -29,8 +31,21 @@ export class PlaymateParticipant {
   player: Person;
 
   @Column({
-    type: 'bool',
-    default: false,
+    type: 'enum',
+    enum: ParticipantStatusEnum,
+    default: ParticipantStatusEnum.PENDING,
   })
-  isAccept: boolean;
+  status: ParticipantStatusEnum;
+
+  @Column({
+    type: 'enum',
+    enum: SkillLevelEnum,
+  })
+  skillLevel: SkillLevelEnum;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  note?: string;
 }

@@ -15,7 +15,9 @@ import { UUID } from 'crypto';
 import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
 import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
 import { UpdatePlaymateDto } from './dtos/update-playmate.dto';
-import { AcceptParticipantPlaymate } from './dtos/accept-participant-playmate.dto';
+import { RegisterPlaymateDto } from './dtos/register-playmate.dto';
+import { ParticipantDto } from './dtos/participant.dto';
+import { ParticipantStatusEnum } from './enums/participant-status.enum';
 
 @Controller('playmate')
 export class PlaymateController {
@@ -53,13 +55,13 @@ export class PlaymateController {
   @ApiOperation({
     summary: 'register a playmate post (role: player)',
   })
-  @Post(':playmateId/register')
+  @Post('register')
   @AuthRoles(AuthRoleEnum.PLAYER)
   public register(
-    @Param('playmateId', ParseUUIDPipe) playmateId: UUID,
+    @Body() registerPlaymateDto: RegisterPlaymateDto,
     @ActivePerson('sub') playerId: UUID,
   ) {
-    return this.playmateService.register(playmateId, playerId);
+    return this.playmateService.register(registerPlaymateDto, playerId);
   }
 
   @ApiOperation({
@@ -72,6 +74,24 @@ export class PlaymateController {
   }
 
   @ApiOperation({
+    summary: 'get all my post (role: player)',
+  })
+  @Get('my-post')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public getMyPost(@ActivePerson('sub') playerId: UUID) {
+    return this.playmateService.getMyPost(playerId);
+  }
+
+  @ApiOperation({
+    summary: 'get all playmate which i registered (role: player)',
+  })
+  @Get('my-register')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public getMyRegister(@ActivePerson('sub') playerId: UUID) {
+    return this.playmateService.getMyRegister(playerId);
+  }
+
+  @ApiOperation({
     summary: 'get detail of playmate post (post: none)',
   })
   @Get(':playmateId')
@@ -81,17 +101,34 @@ export class PlaymateController {
   }
 
   @ApiOperation({
-    summary: 'accept player to playmate (role: player)',
+    summary: 'accept to register (role: player)',
   })
-  @Put('switch-accept')
+  @Put('accept')
   @AuthRoles(AuthRoleEnum.PLAYER)
-  public switchAccept(
-    @Body() acceptParticipantPlaymate: AcceptParticipantPlaymate,
+  public accept(
+    @Body() participantDto: ParticipantDto,
     @ActivePerson('sub') playerId: UUID,
   ) {
-    return this.playmateService.switchAccept(
-      acceptParticipantPlaymate,
+    return this.playmateService.decideRegister(
+      participantDto,
       playerId,
+      ParticipantStatusEnum.ACCEPTED,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'reject to register (role: player)',
+  })
+  @Put('reject')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  reject(
+    @Body() participantDto: ParticipantDto,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.playmateService.decideRegister(
+      participantDto,
+      playerId,
+      ParticipantStatusEnum.REJECTED,
     );
   }
 }

@@ -11,11 +11,11 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { PlaymatePaymentType } from '../enums/playmate-payment-type.enum';
-import { PlaymateGenderEnum } from '../enums/playmate-gender.enum';
-import { PlaymateLevelEnum } from '../enums/playmate-level.enum';
 import { PlaymateParticipant } from './playmate-participant.entity';
 import { BadRequestException } from '@nestjs/common';
+import { CostTypeEnum } from '../enums/cost-type.enum';
+import { GenderPreferenceEnum } from '../enums/gender-preference.enum';
+import { SkillLevelEnum } from '../enums/skill-level.enum';
 
 @Entity()
 export class Playmate {
@@ -56,10 +56,10 @@ export class Playmate {
 
   @Column({
     type: 'enum',
-    enum: PlaymatePaymentType,
+    enum: CostTypeEnum,
     nullable: false,
   })
-  paymentType: PlaymatePaymentType;
+  costType: CostTypeEnum;
 
   @Column({
     type: 'integer',
@@ -105,17 +105,17 @@ export class Playmate {
 
   @Column({
     type: 'enum',
-    enum: PlaymateGenderEnum,
-    default: PlaymateGenderEnum.NONE,
+    enum: GenderPreferenceEnum,
+    default: GenderPreferenceEnum.ANY,
   })
-  gender: PlaymateGenderEnum;
+  genderPreference: GenderPreferenceEnum;
 
   @Column({
     type: 'enum',
-    enum: PlaymateLevelEnum,
-    default: PlaymateLevelEnum.NONE,
+    enum: SkillLevelEnum,
+    default: SkillLevelEnum.ANY,
   })
-  level: PlaymateLevelEnum;
+  skillLevel: SkillLevelEnum;
 
   @OneToMany(() => PlaymateParticipant, (participants) => participants.playmate)
   participants: PlaymateParticipant[];
@@ -128,12 +128,12 @@ export class Playmate {
   @BeforeInsert()
   @BeforeUpdate()
   beforeInsertAndUpdate() {
-    if (this.paymentType === PlaymatePaymentType.TOTAL && !this.totalCost) {
+    if (this.costType === CostTypeEnum.TOTAL && !this.totalCost) {
       throw new BadRequestException('Miss total cost');
     }
 
     if (
-      this.paymentType === PlaymatePaymentType.GENDER &&
+      this.costType === CostTypeEnum.GENDER &&
       (!this.maleCost || !this.femaleCost)
     ) {
       throw new BadRequestException('Miss male or female cost');
