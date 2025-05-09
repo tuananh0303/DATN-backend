@@ -247,6 +247,10 @@ export class ReviewService implements IReviewService {
         throw new BadRequestException('Not found the review');
       });
 
+    if (review.feedback) {
+      throw new BadRequestException('The review has been feedbacked');
+    }
+
     if (updateReviewDto.rating) review.rating = updateReviewDto.rating;
 
     if (updateReviewDto.comment) review.comment = updateReviewDto.comment;
