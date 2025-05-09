@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiOperation, ApiProperty } from '@nestjs/swagger';
 import {
   IsEnum,
   IsNotEmpty,
@@ -26,4 +26,13 @@ export class PaymentDto {
   @IsNotEmpty()
   @IsEnum(PaymentOptionEnum)
   paymentOption: PaymentOptionEnum;
+
+  @ApiProperty({
+    type: 'number',
+    example: 10,
+  })
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  refundedPoint?: number;
 }

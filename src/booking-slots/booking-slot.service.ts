@@ -6,7 +6,7 @@ import { Field } from 'src/fields/field.entity';
 import { EntityManager, MoreThan, Repository } from 'typeorm';
 import { UUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
+import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 
 @Injectable()
 export class BookingSlotService implements IBookingSlotService {
@@ -82,9 +82,7 @@ export class BookingSlotService implements IBookingSlotService {
           player: {
             id: playerId,
           },
-          payment: {
-            status: PaymentStatusEnum.PAID,
-          },
+          status: BookingStatusEnum.COMPLETED,
         },
         date: MoreThan(now),
       },

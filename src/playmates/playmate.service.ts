@@ -11,12 +11,12 @@ import { Playmate } from './entities/playmate.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookingSlotService } from 'src/booking-slots/booking-slot.service';
 import { UpdatePlaymateDto } from './dtos/update-playmate.dto';
-import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
 import { PlaymateParticipant } from './entities/playmate-participant.entity';
 import { BookingSlot } from 'src/booking-slots/booking-slot.entity';
 import { RegisterPlaymateDto } from './dtos/register-playmate.dto';
 import { ParticipantDto } from './dtos/participant.dto';
 import { ParticipantStatusEnum } from './enums/participant-status.enum';
+import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 
 @Injectable()
 export class PlaymateService implements IPlaymateService {
@@ -59,8 +59,8 @@ export class PlaymateService implements IPlaymateService {
       ['booking.payment'],
     );
 
-    if (bookingSlot.booking.payment.status !== PaymentStatusEnum.PAID) {
-      throw new BadRequestException('The booking slot must be paid');
+    if (bookingSlot.booking.status !== BookingStatusEnum.COMPLETED) {
+      throw new BadRequestException('The booking must be completed');
     }
 
     return bookingSlot;

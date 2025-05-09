@@ -57,6 +57,18 @@ export class ReviewController {
   // }
 
   @ApiOperation({
+    summary: 'update reivew by id (role: player)',
+  })
+  @Put('update-review')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public updateReview(
+    @Body() updateReviewDto: UpdateReviewDto,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.reviewService.updateReview(updateReviewDto, playerId);
+  }
+
+  @ApiOperation({
     summary: 'feedback review of player (role: owner)',
   })
   @Put(':reviewId/feedback')
@@ -87,17 +99,5 @@ export class ReviewController {
   @AuthRoles(AuthRoleEnum.NONE)
   public getById(@Param('reviewId', ParseIntPipe) reviewId: number) {
     return this.reviewService.getById(reviewId);
-  }
-
-  @ApiOperation({
-    summary: 'update reivew by id (role: player)',
-  })
-  @Put('review')
-  @AuthRoles(AuthRoleEnum.PLAYER)
-  public updateReview(
-    @Body() updateReviewDto: UpdateReviewDto,
-    @ActivePerson('sub') playerId: UUID,
-  ) {
-    return this.reviewService.updateReview(updateReviewDto, playerId);
   }
 }
