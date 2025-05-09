@@ -14,9 +14,8 @@ export class License {
   @Column({
     type: 'varchar',
     length: 255,
-    nullable: true,
   })
-  verified?: string;
+  verified: string;
 
   @ManyToOne(() => Facility, (facility) => facility.licenses, {
     onDelete: 'CASCADE',

@@ -10,16 +10,8 @@ export class Certificate {
   @Column({
     type: 'varchar',
     length: 255,
-    nullable: true,
   })
-  verified?: string;
-
-  @Column({
-    type: 'varchar',
-    length: 255,
-    nullable: true,
-  })
-  temporary?: string;
+  verified: string;
 
   @OneToOne(() => Facility, (facility) => facility.certificate, {
     onDelete: 'CASCADE',
