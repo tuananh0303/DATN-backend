@@ -54,7 +54,7 @@ export class Booking {
     type: 'enum',
     enum: BookingStatusEnum,
     nullable: false,
-    default: BookingStatusEnum.DRAFT,
+    default: BookingStatusEnum.INCOMPLETE,
   })
   status: BookingStatusEnum;
 

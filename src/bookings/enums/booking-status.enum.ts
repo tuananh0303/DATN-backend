@@ -1,4 +1,5 @@
 export enum BookingStatusEnum {
-  DRAFT = 'draft',
+  INCOMPLETE = 'incomplete',
   COMPLETED = 'completed',
+  CANCELED = 'canceled',
 }

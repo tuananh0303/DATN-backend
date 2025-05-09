@@ -10,12 +10,12 @@ import { Payment } from './payment.entity';
 import { UUID } from 'crypto';
 import { PaymentDto } from './dtos/requests/payment.dto';
 import { VoucherService } from 'src/vouchers/voucher.service';
-import { PaymentStatusEnum } from './enums/payment-status.enum';
 import { VoucherTypeEnum } from 'src/vouchers/enums/voucher-type.enum';
 import { VnpayProvider } from './providers/vnpay.provider';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
+import { Person } from 'src/people/person.entity';
 
 @Injectable()
 export class PaymentService implements IPaymentService {
@@ -87,8 +87,8 @@ export class PaymentService implements IPaymentService {
         );
       });
 
-    if (payment.status !== PaymentStatusEnum.UNPAID) {
-      throw new BadRequestException('An error occurred');
+    if (payment.booking.status !== BookingStatusEnum.INCOMPLETE) {
+      throw new BadRequestException('The booking must be incomplete');
     }
 
     return await this.dataSource.transaction<{ paymentUrl: string }>(
@@ -143,13 +143,32 @@ export class PaymentService implements IPaymentService {
           }
         }
 
+        if (paymentDto.refundedPoint) {
+          // get player
+          const player = await manager
+            .findOneOrFail(Person, {
+              where: {
+                id: playerId,
+              },
+            })
+            .catch(() => {
+              throw new BadRequestException('Not found the player');
+            });
+
+          if (player.refundedPoint < paymentDto.refundedPoint) {
+            throw new BadRequestException(
+              'The player has refunded points lower than required',
+            );
+          }
+
+          player.refundedPoint -= paymentDto.refundedPoint;
+
+          await manager.save(player);
+
+          payment.refundedPoint = paymentDto.refundedPoint;
+        }
+
         await manager.save(payment);
-
-        const booking = payment.booking;
-
-        booking.status = BookingStatusEnum.COMPLETED;
-
-        await manager.save(booking);
 
         // if(paymentDto.paymentOption ===)
         return this.vnpayProvider.payment(payment, req);

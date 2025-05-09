@@ -125,4 +125,16 @@ export class BookingController {
   ) {
     return this.bookingService.getSchedule(getScheduleDto, ownerId);
   }
+
+  @ApiOperation({
+    summary: 'cancel booking (role: player)',
+  })
+  @Put(':bookingId/cancel')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public cancelBooking(
+    @Param('bookingId', ParseUUIDPipe) bookingId: UUID,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.bookingService.cancelBooking(bookingId, playerId);
+  }
 }
