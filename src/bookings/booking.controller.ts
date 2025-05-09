@@ -85,6 +85,15 @@ export class BookingController {
   }
 
   @ApiOperation({
+    summary: 'get all booking of owner (role: owner)',
+  })
+  @Get('owner')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  public getManyByOwner(@ActivePerson('sub') ownerId: UUID) {
+    return this.bookingService.getManyByOwner(ownerId);
+  }
+
+  @ApiOperation({
     summary: 'delete draft booking (role: player)',
   })
   @Delete(':bookingId/delete-draft')

@@ -19,6 +19,7 @@ import { UUID } from 'crypto';
 import { ReviewService } from './review.service';
 import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
 import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
+import { UpdateReviewDto } from './dtos/requests/update-review.dto';
 
 @Controller('review')
 export class ReviewController {
@@ -86,5 +87,17 @@ export class ReviewController {
   @AuthRoles(AuthRoleEnum.NONE)
   public getById(@Param('reviewId', ParseIntPipe) reviewId: number) {
     return this.reviewService.getById(reviewId);
+  }
+
+  @ApiOperation({
+    summary: 'update reivew by id (role: player)',
+  })
+  @Put('review')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public updateReview(
+    @Body() updateReviewDto: UpdateReviewDto,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.reviewService.updateReview(updateReviewDto, playerId);
   }
 }

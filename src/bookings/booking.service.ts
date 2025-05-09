@@ -217,7 +217,7 @@ export class BookingService implements IBookingService {
           createDraftBookingDto.startTime,
         );
 
-        fieldPrice = field.fieldGroup.basePrice * playTime;
+        fieldPrice += field.fieldGroup.basePrice * playTime;
 
         if (field.fieldGroup.numberOfPeaks > 0) {
           const overlapPeak = durationOverlapTime(
@@ -662,6 +662,49 @@ export class BookingService implements IBookingService {
     });
 
     // get facility and fieldGroup by field in booking
+    return await Promise.all(
+      bookings.map(async (booking) => {
+        const facility = await this.facilityService.findOneByField(
+          booking.bookingSlots[0].field.id,
+        );
+
+        return {
+          facility,
+          booking,
+        };
+      }),
+    );
+  }
+
+  public async getManyByOwner(ownerID: UUID): Promise<any[]> {
+    const bookings = await this.bookingRepository.find({
+      relations: {
+        sport: true,
+        bookingSlots: {
+          field: true,
+        },
+        payment: true,
+        review: true,
+      },
+      where: {
+        bookingSlots: {
+          field: {
+            fieldGroup: {
+              facility: {
+                owner: {
+                  id: ownerID,
+                },
+              },
+            },
+          },
+        },
+        status: BookingStatusEnum.COMPLETED,
+        payment: {
+          status: PaymentStatusEnum.PAID,
+        },
+      },
+    });
+
     return await Promise.all(
       bookings.map(async (booking) => {
         const facility = await this.facilityService.findOneByField(

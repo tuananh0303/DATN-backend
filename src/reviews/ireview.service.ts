@@ -1,6 +1,7 @@
 import { UUID } from 'crypto';
 import { CreateReviewDto } from './dtos/requests/create-review.dto';
 import { Review } from './review.entity';
+import { UpdateReviewDto } from './dtos/requests/update-review.dto';
 
 export interface IReviewService {
   create(
@@ -20,4 +21,9 @@ export interface IReviewService {
   getManyByFacility(facilityId: UUID): Promise<Review[]>;
 
   getById(reviewId: number): Promise<Review>;
+
+  updateReview(
+    updateReviewDto: UpdateReviewDto,
+    playerId: UUID,
+  ): Promise<{ message: string }>;
 }

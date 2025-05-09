@@ -78,7 +78,7 @@ export class ApprovalFacilityNameProvider implements ApprovalAbstract {
           throw new BadRequestException('An error occurred');
         });
 
-      certifiacte.verified = approval.certifiacte;
+      certifiacte.verified = approval.certifiacte!;
 
       try {
         await manager.save(approval);

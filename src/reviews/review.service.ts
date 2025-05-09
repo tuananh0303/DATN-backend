@@ -13,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CloudUploaderService } from 'src/cloud-uploader/cloud-uploader.service';
 import { FacilityService } from 'src/facilities/facility.service';
 import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
+import { UpdateReviewDto } from './dtos/requests/update-review.dto';
 
 @Injectable()
 export class ReviewService implements IReviewService {
@@ -225,5 +226,38 @@ export class ReviewService implements IReviewService {
       .catch(() => {
         throw new NotFoundException('Not found the review');
       });
+  }
+
+  public async updateReview(
+    updateReviewDto: UpdateReviewDto,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    const review = await this.reviewRepository
+      .findOneOrFail({
+        where: {
+          id: updateReviewDto.reviewId,
+          booking: {
+            player: {
+              id: playerId,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new BadRequestException('Not found the review');
+      });
+
+    if (updateReviewDto.rating) review.rating = updateReviewDto.rating;
+
+    if (updateReviewDto.comment) review.comment = updateReviewDto.comment;
+    try {
+      await this.reviewRepository.save(review);
+    } catch {
+      throw new BadRequestException('An error occurred when update reivew');
+    }
+
+    return {
+      message: 'Update review successful',
+    };
   }
 }
