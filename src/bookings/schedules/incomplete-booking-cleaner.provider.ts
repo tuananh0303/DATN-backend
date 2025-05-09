@@ -3,10 +3,10 @@ import { LessThan, Repository } from 'typeorm';
 import { Booking } from '../booking.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookingStatusEnum } from '../enums/booking-status.enum';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
-export class BookingDraftCleanerProvider {
+export class IncompleteBookingCleaner {
   constructor(
     /**
      * inject BookingRepository
@@ -15,14 +15,14 @@ export class BookingDraftCleanerProvider {
     private readonly bookingRepository: Repository<Booking>,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  public async clearnBookingDraft() {
-    const tenMinutes = new Date(Date.now() - 10 * 60 * 1000);
+  @Cron('0 */15 * * * *')
+  public async cleanIncompleteBooking() {
+    const fiftenMinutes = new Date(Date.now() - 15 * 60 * 1000);
 
     const expiredBookingDraft = await this.bookingRepository.find({
       where: {
-        status: BookingStatusEnum.DRAFT,
-        createdAt: LessThan(tenMinutes),
+        status: BookingStatusEnum.INCOMPLETE,
+        updatedAt: LessThan(fiftenMinutes),
       },
     });
 
@@ -30,7 +30,7 @@ export class BookingDraftCleanerProvider {
       await this.bookingRepository.remove(expiredBookingDraft);
     } catch {
       throw new InternalServerErrorException(
-        'An error occurred in BookingDraftCleaner',
+        'An error occurred in clean incomplete booking',
       );
     }
   }

@@ -12,7 +12,7 @@ import {
 import { AdditionalService } from './additional-service.entity';
 import { Service } from 'src/services/service.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
+import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 
 @Injectable()
 export class AdditionalServiceService implements IAdditionalServiceService {
@@ -58,18 +58,14 @@ export class AdditionalServiceService implements IAdditionalServiceService {
             bookingSlots: {
               date: date,
             },
-            payment: {
-              status: Not(PaymentStatusEnum.CANCELLED),
-            },
+            status: Not(BookingStatusEnum.CANCELED),
           },
           {
             endTime: Between(startTime, endTime),
             bookingSlots: {
               date: date,
             },
-            payment: {
-              status: Not(PaymentStatusEnum.CANCELLED),
-            },
+            status: Not(BookingStatusEnum.CANCELED),
           },
           {
             startTime: LessThanOrEqual(startTime),
@@ -77,9 +73,7 @@ export class AdditionalServiceService implements IAdditionalServiceService {
             bookingSlots: {
               date: date,
             },
-            payment: {
-              status: Not(PaymentStatusEnum.CANCELLED),
-            },
+            status: Not(BookingStatusEnum.CANCELED),
           },
         ],
       },

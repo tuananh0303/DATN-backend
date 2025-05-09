@@ -8,7 +8,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PaymentStatusEnum } from './enums/payment-status.enum';
 import { Booking } from 'src/bookings/booking.entity';
 import { Voucher } from 'src/vouchers/voucher.entity';
 
@@ -39,19 +38,25 @@ export class Payment {
   })
   discount?: number;
 
+  @Column({
+    type: 'integer',
+    nullable: true,
+    default: 0,
+  })
+  refund?: number;
+
+  @Column({
+    type: 'integer',
+    nullable: true,
+    default: 0,
+  })
+  refundedPoint?: number;
+
   @UpdateDateColumn({
     type: 'timestamptz',
     nullable: false,
   })
   updatedAt: Date;
-
-  @Column({
-    type: 'enum',
-    enum: PaymentStatusEnum,
-    default: PaymentStatusEnum.UNPAID,
-    nullable: false,
-  })
-  status: PaymentStatusEnum;
 
   @OneToOne(() => Booking, (booking) => booking.payment, {
     onDelete: 'CASCADE',

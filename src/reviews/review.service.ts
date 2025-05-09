@@ -12,8 +12,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CloudUploaderService } from 'src/cloud-uploader/cloud-uploader.service';
 import { FacilityService } from 'src/facilities/facility.service';
-import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
 import { UpdateReviewDto } from './dtos/requests/update-review.dto';
+import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 
 @Injectable()
 export class ReviewService implements IReviewService {
@@ -48,8 +48,8 @@ export class ReviewService implements IReviewService {
       ['bookingSlots.field', 'review', 'payment'],
     );
 
-    if (booking.payment.status !== PaymentStatusEnum.PAID) {
-      throw new BadRequestException('The booking is unpaid or cancel');
+    if (booking.status !== BookingStatusEnum.COMPLETED) {
+      throw new BadRequestException('The booking must be completed');
     }
 
     let isAccept = false;

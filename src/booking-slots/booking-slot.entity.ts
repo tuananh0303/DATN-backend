@@ -10,6 +10,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { BookingSlotStatusEnum } from './enums/booking-slot-status.enum';
 
 @Entity()
 export class BookingSlot {
@@ -20,6 +21,13 @@ export class BookingSlot {
     type: 'date',
   })
   date: Date;
+
+  @Column({
+    type: 'enum',
+    enum: BookingSlotStatusEnum,
+    default: BookingSlotStatusEnum.UPCOMING,
+  })
+  status: BookingSlotStatusEnum;
 
   @ManyToOne(() => Field, (field) => field.bookingSlots, {
     nullable: false,
