@@ -68,7 +68,9 @@ export class BookingSlotService implements IBookingSlotService {
 
     const bookingSlots = await this.bookingSlotRepository.find({
       relations: {
-        booking: true,
+        booking: {
+          sport: true,
+        },
         field: {
           fieldGroup: {
             facility: true,
