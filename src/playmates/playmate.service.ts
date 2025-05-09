@@ -231,6 +231,7 @@ export class PlaymateService implements IPlaymateService {
         bookingSlot: {
           booking: {
             player: true,
+            sport: true,
           },
           field: {
             fieldGroup: {
@@ -257,6 +258,7 @@ export class PlaymateService implements IPlaymateService {
           bookingSlot: {
             booking: {
               player: true,
+              sport: true,
             },
             field: {
               fieldGroup: {
@@ -283,7 +285,9 @@ export class PlaymateService implements IPlaymateService {
     return await this.playmateRepository.find({
       relations: {
         bookingSlot: {
-          booking: true,
+          booking: {
+            sport: true,
+          },
           field: {
             fieldGroup: {
               facility: true,
@@ -312,6 +316,7 @@ export class PlaymateService implements IPlaymateService {
         bookingSlot: {
           booking: {
             player: true,
+            sport: true,
           },
           field: {
             fieldGroup: {
@@ -336,6 +341,7 @@ export class PlaymateService implements IPlaymateService {
           bookingSlot: {
             booking: {
               player: true,
+              sport: true,
             },
           },
           participants: true,
