@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { LessThan, MoreThan, Repository } from 'typeorm';
 import { BookingSlot } from '../booking-slot.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { BookingSlotStatusEnum } from '../enums/booking-slot-status.enum';
 
 @Injectable()
