@@ -254,6 +254,9 @@ export class ReviewService implements IReviewService {
     if (updateReviewDto.rating) review.rating = updateReviewDto.rating;
 
     if (updateReviewDto.comment) review.comment = updateReviewDto.comment;
+
+    review.imageUrl = updateReviewDto.imageUrl;
+
     try {
       await this.reviewRepository.save(review);
     } catch {

@@ -1,10 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsArray,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
   IsString,
+  IsUrl,
   Max,
   Min,
 } from 'class-validator';
@@ -34,4 +36,12 @@ export class UpdateReviewDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiProperty({
+    type: [String],
+  })
+  @IsUrl({}, { each: true })
+  @IsArray()
+  @IsNotEmpty()
+  imageUrl: string[];
 }
