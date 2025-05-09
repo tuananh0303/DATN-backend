@@ -46,7 +46,7 @@ export class Playmate {
     type: 'text',
     nullable: true,
   })
-  desciption?: string;
+  description?: string;
 
   @Column({
     type: 'text',
