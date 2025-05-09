@@ -128,7 +128,7 @@ export class PlaymateService implements IPlaymateService {
       }
 
       if (updatePlaymateDto.description)
-        playmate.desciption = updatePlaymateDto.description;
+        playmate.description = updatePlaymateDto.description;
 
       if (updatePlaymateDto.additionalInfor)
         playmate.additionalInfo = updatePlaymateDto.additionalInfor;
