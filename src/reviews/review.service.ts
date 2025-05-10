@@ -58,9 +58,6 @@ export class ReviewService implements IReviewService {
       const bookingDate = new Date(
         bookingSlot.date.toISOString().split('T')[0] + ' ' + booking.startTime,
       );
-
-      console.log(booking.createdAt);
-
       if (bookingDate < new Date(new Date().toString())) {
         isAccept = true;
 

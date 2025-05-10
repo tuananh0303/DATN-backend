@@ -15,11 +15,11 @@ export class BookingSlotCompleteTask {
     private readonly bookingSlotRepository: Repository<BookingSlot>,
   ) {}
 
-  @Cron('0 */1 * * * *')
+  @Cron('0 */30 * * * *')
   public async completeTask() {
     const now = new Date().toISOString().replace('Z', '');
 
-    const [date, time] = now.split('T');
+    const [, time] = now.split('T');
 
     const bookingSlots = await this.bookingSlotRepository.find({
       where:
@@ -31,11 +31,11 @@ export class BookingSlotCompleteTask {
         [
           {
             status: BookingSlotStatusEnum.UPCOMING,
-            date: LessThan(new Date(date)),
+            date: LessThan(new Date()),
           },
           {
             status: BookingSlotStatusEnum.UPCOMING,
-            date: new Date(date),
+            date: new Date(),
             booking: {
               startTime: MoreThan(time),
             },
