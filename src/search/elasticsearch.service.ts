@@ -462,8 +462,8 @@ export class ElasticsearchService implements OnModuleInit {
       await this.elasticsearchService.indices.putMapping({
         index: this.indices.facilities,
         properties: {
-          minPrice: { type: 'float' },
-          maxPrice: { type: 'float' },
+          minPrice: { type: 'long' },
+          maxPrice: { type: 'long' },
           fieldGroups: {
             type: 'nested',
             properties: {

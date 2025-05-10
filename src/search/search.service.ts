@@ -75,6 +75,8 @@ export class SearchService {
       sortBy,
       sortOrder,
       location,
+      province,
+      district,
       minRating,
       sportIds,
     } = searchQueryDto;
@@ -88,8 +90,8 @@ export class SearchService {
       const should: any[] = [];
       const filter: any[] = [];
 
-      // Biến debug - đặt thành true để bỏ qua bộ lọc status
-      const debug = true;
+      // Biến debug - đặt thành false để chỉ hiển thị facilities có status là ACTIVE
+      const debug = false;
       
       // Only search for active facilities 
       if (!debug) {
@@ -112,13 +114,36 @@ export class SearchService {
         });
       }
 
-      // Add location filter if provided
-      if (location && location.trim()) {
-        must.push({
-          match: {
-            location: location.trim(),
-          },
-        });
+      // Xử lý tìm kiếm theo province, district và location
+      if (province || district || location) {
+        // Nếu có location, sử dụng trực tiếp
+        if (location && location.trim()) {
+          must.push({
+            match: {
+              location: location.trim(),
+            },
+          });
+        } 
+        // Nếu có province hoặc district, tìm kiếm trong trường location
+        else if (province || district) {
+          let locationQuery = '';
+          
+          if (province) {
+            locationQuery += province.trim();
+          }
+          
+          if (district) {
+            locationQuery += locationQuery ? `, ${district.trim()}` : district.trim();
+          }
+          
+          if (locationQuery) {
+            must.push({
+              match: {
+                location: locationQuery,
+              },
+            });
+          }
+        }
       }
 
       // Add minimum rating filter
@@ -132,9 +157,14 @@ export class SearchService {
         });
       }
 
+      // Chuyển đổi sportIds thành mảng nếu nó là giá trị đơn
+      const sportIdsArray = sportIds ? 
+        (Array.isArray(sportIds) ? sportIds : [sportIds]) : 
+        [];
+
       // Add sport filter if provided
-      if (sportIds && sportIds.length > 0) {
-        const sportsFilter = sportIds.map((sportId) => ({
+      if (sportIdsArray.length > 0) {
+        const sportsFilter = sportIdsArray.map((sportId) => ({
           nested: {
             path: 'sports',
             query: {
