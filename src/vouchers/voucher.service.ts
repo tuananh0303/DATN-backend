@@ -6,7 +6,7 @@ import {
 import { IVoucherService } from './ivoucher.service';
 import { UUID } from 'crypto';
 import { CreateVoucherDto } from './dtos/requests/create-voucher.dto';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { Voucher } from './voucher.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FacilityService } from 'src/facilities/facility.service';
@@ -171,5 +171,22 @@ export class VoucherService implements IVoucherService {
       .catch(() => {
         throw new NotFoundException('Not found the voucher');
       });
+  }
+
+  public async getSixVouchers(): Promise<Voucher[]> {
+    const now = new Date();
+
+    const sixVouchers = await this.voucherRepository.find({
+      where: {
+        startDate: LessThanOrEqual(now),
+        endDate: MoreThanOrEqual(now),
+      },
+      order: {
+        endDate: 'ASC',
+      },
+      take: 6,
+    });
+
+    return sixVouchers;
   }
 }

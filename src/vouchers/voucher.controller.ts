@@ -64,6 +64,15 @@ export class VoucherController {
   }
 
   @ApiOperation({
+    summary: 'get six voucher (role: none)',
+  })
+  @Get('six-vouchers')
+  @AuthRoles(AuthRoleEnum.NONE)
+  public getSixVouchers() {
+    return this.voucherService.getSixVouchers();
+  }
+
+  @ApiOperation({
     summary: 'get voucher by facility (role: none)',
   })
   @Get(':facilityId')
