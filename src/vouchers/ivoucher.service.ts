@@ -22,4 +22,6 @@ export interface IVoucherService {
   getByFacility(facilityId: UUID): Promise<Voucher[]>;
 
   findOneById(voucherId: number, relations?: string[]): Promise<Voucher>;
+
+  getSixVouchers(): Promise<Voucher[]>;
 }
