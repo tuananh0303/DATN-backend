@@ -6,7 +6,7 @@ import {
 import { IVoucherService } from './ivoucher.service';
 import { UUID } from 'crypto';
 import { CreateVoucherDto } from './dtos/requests/create-voucher.dto';
-import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { Voucher } from './voucher.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FacilityService } from 'src/facilities/facility.service';
@@ -177,12 +177,14 @@ export class VoucherService implements IVoucherService {
     const now = new Date();
 
     const sixVouchers = await this.voucherRepository.find({
+      relations: {
+        facility: true,
+      },
       where: {
-        startDate: LessThanOrEqual(now),
         endDate: MoreThanOrEqual(now),
       },
       order: {
-        endDate: 'ASC',
+        startDate: 'ASC',
       },
       take: 6,
     });
