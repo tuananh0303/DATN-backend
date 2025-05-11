@@ -107,60 +107,85 @@ export class SearchService {
       if (query && query.trim()) {
         const trimmedQuery = query.trim();
         
-        // Tìm kiếm chính xác trong name (trọng số cao nhất)
+        // Tìm kiếm chính xác cụm từ đầy đủ trong name (trọng số cao nhất)
         should.push({
           match_phrase: {
             name: {
               query: trimmedQuery,
-              boost: 5.0, // Trọng số cao nhất
+              boost: 10.0, // Trọng số rất cao cho match_phrase
+              slop: 3, // Tăng slop từ 2 lên 3 để cho phép linh hoạt hơn
               analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm chính xác trong location (trọng số cao thứ hai)
+        // Tìm kiếm chính xác cụm từ đầy đủ trong location (trọng số cao)
         should.push({
           match_phrase: {
             location: {
               query: trimmedQuery,
-              boost: 4.0, // Trọng số cao thứ hai
+              boost: 8.0, // Trọng số cao cho match_phrase
+              slop: 3, // Tăng slop từ 2 lên 3
               analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm từng từ trong name (trọng số thấp hơn)
+        // Tìm kiếm mờ hơn với match (trọng số thấp hơn)
         should.push({
           match: {
             name: {
               query: trimmedQuery,
-              boost: 2.0,
-              fuzziness: '1', // Giảm mức fuzziness xuống 1 ký tự
+              boost: 3.0, // Tăng trọng số cho match lên 3.0
+              fuzziness: 2, // Tăng fuzziness lên 2 để cho phép sai tối đa 2 ký tự
+              operator: "and", // Yêu cầu tất cả các từ phải xuất hiện
               analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm từng từ trong location (trọng số thấp nhất)
+        // Tìm kiếm mờ hơn với match trong location (trọng số thấp nhất)
         should.push({
           match: {
             location: {
               query: trimmedQuery,
-              boost: 1.0,
-              fuzziness: '1', // Giảm mức fuzziness xuống 1 ký tự
+              boost: 2.0, // Tăng trọng số lên 2.0
+              fuzziness: 2, // Tăng fuzziness lên 2
+              operator: "and", // Yêu cầu tất cả các từ phải xuất hiện
               analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
 
-        // Nếu có query, thêm bộ lọc để đảm bảo kết quả phải chứa từ khóa tìm kiếm trong tên HOẶC địa điểm
-        filter.push({
+        // Bắt buộc kết quả phải chứa cụm từ tìm kiếm trong name HOẶC location
+        must.push({
           bool: {
             should: [
+              {
+                match_phrase: {
+                  name: {
+                    query: trimmedQuery,
+                    slop: 4, // Tăng slop lên 4 để cho phép linh hoạt hơn trong điều kiện bắt buộc
+                    analyzer: 'vietnamese_search_analyzer',
+                  },
+                },
+              },
+              {
+                match_phrase: {
+                  location: {
+                    query: trimmedQuery,
+                    slop: 4, // Tăng slop lên 4
+                    analyzer: 'vietnamese_search_analyzer',
+                  },
+                },
+              },
+              // Trường hợp tìm kiếm với các từ riêng lẻ nhưng yêu cầu đầy đủ
               {
                 match: {
                   name: {
                     query: trimmedQuery,
+                    minimum_should_match: "75%", // Giảm từ 90% xuống 75% để cho phép sai chính tả nhiều hơn
+                    fuzziness: 2, // Thêm fuzziness vào match trong điều kiện bắt buộc
                     analyzer: 'vietnamese_search_analyzer',
                   },
                 },
@@ -169,12 +194,33 @@ export class SearchService {
                 match: {
                   location: {
                     query: trimmedQuery,
+                    minimum_should_match: "75%", // Giảm từ 90% xuống 75%
+                    fuzziness: 2, // Thêm fuzziness vào match trong điều kiện bắt buộc
                     analyzer: 'vietnamese_search_analyzer',
                   },
                 },
               },
+              // Thêm fuzzy match chuyên biệt cho tìm kiếm có lỗi chính tả lớn
+              {
+                fuzzy: {
+                  name: {
+                    value: trimmedQuery,
+                    fuzziness: "AUTO", // AUTO sẽ tự động điều chỉnh mức độ fuzziness dựa trên độ dài từ
+                    boost: 2.0, // Trọng số phù hợp
+                  }
+                }
+              },
+              {
+                fuzzy: {
+                  location: {
+                    value: trimmedQuery,
+                    fuzziness: "AUTO",
+                    boost: 1.0,
+                  }
+                }
+              }
             ],
-            minimum_should_match: 1,
+            minimum_should_match: 1, // Vẫn chỉ cần khớp 1 trong các điều kiện trên
           },
         });
       }
@@ -277,7 +323,7 @@ export class SearchService {
               must,
               should,
               filter,
-              minimum_should_match: should.length > 0 ? 2 : 0,
+              minimum_should_match: should.length > 0 ? 1 : 0,
             },
           },
           highlight: {
