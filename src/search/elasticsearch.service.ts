@@ -577,15 +577,50 @@ export class ElasticsearchService implements OnModuleInit {
     try {
       // Kiểm tra index có tồn tại không
       const indexExists = await this.elasticsearchService.indices.exists({
-        index: this.indices.facilities
+        index: this.indices.facilities,
       });
 
       // Nếu index tồn tại, xóa nó
       if (indexExists) {
-        await this.elasticsearchService.indices.delete({
-          index: this.indices.facilities
-        });
-        this.logger.log(`Deleted existing index ${this.indices.facilities}`);
+        try {
+          // Kiểm tra xem facilities có phải là alias không
+          const isAlias = await this.elasticsearchService.indices.existsAlias({
+            name: this.indices.facilities,
+          });
+
+          if (isAlias) {
+            // Nếu là alias, lấy danh sách các concrete indices gắn với alias này
+            const getAliasResponse = await this.elasticsearchService.indices.getAlias({
+              name: this.indices.facilities,
+            });
+            
+            // Lấy danh sách các concrete indices
+            const concreteIndices = Object.keys(getAliasResponse);
+            
+            this.logger.log(`Found concrete indices for alias ${this.indices.facilities}: ${concreteIndices.join(', ')}`);
+            
+            // Xóa từng concrete index
+            for (const concreteIndex of concreteIndices) {
+              this.logger.log(`Deleting concrete index ${concreteIndex}`);
+              await this.elasticsearchService.indices.delete({
+                index: concreteIndex,
+              });
+            }
+          } else {
+            // Nếu không phải alias, xóa index trực tiếp
+            await this.elasticsearchService.indices.delete({
+              index: this.indices.facilities,
+            });
+          }
+          
+          this.logger.log(`Deleted existing index/alias ${this.indices.facilities}`);
+        } catch (deleteError) {
+          this.logger.error(
+            `Error deleting index/alias: ${deleteError instanceof Error ? deleteError.message : 'Unknown error'}`,
+            deleteError instanceof Error ? deleteError.stack : undefined,
+          );
+          throw deleteError;
+        }
       }
 
       // Tạo lại index với settings và mappings mới
@@ -600,7 +635,7 @@ export class ElasticsearchService implements OnModuleInit {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
         `Error resetting index: ${errorMessage}`,
-        error instanceof Error ? error.stack : undefined
+        error instanceof Error ? error.stack : undefined,
       );
       return {
         success: false,

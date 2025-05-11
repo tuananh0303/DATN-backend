@@ -107,44 +107,74 @@ export class SearchService {
       if (query && query.trim()) {
         const trimmedQuery = query.trim();
         
-        // Tìm kiếm chính xác trong name và location (trọng số cao nhất)
+        // Tìm kiếm chính xác trong name (trọng số cao nhất)
         should.push({
           match_phrase: {
             name: {
               query: trimmedQuery,
               boost: 5.0, // Trọng số cao nhất
+              analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
+        // Tìm kiếm chính xác trong location (trọng số cao thứ hai)
         should.push({
           match_phrase: {
             location: {
               query: trimmedQuery,
               boost: 4.0, // Trọng số cao thứ hai
+              analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm từng từ trong name (trọng số cao)
+        // Tìm kiếm từng từ trong name (trọng số thấp hơn)
         should.push({
           match: {
             name: {
               query: trimmedQuery,
-              boost: 3.0, // Trọng số cao thứ ba
-              fuzziness: 'AUTO', // Cho phép lỗi đánh máy
+              boost: 2.0,
+              fuzziness: '1', // Giảm mức fuzziness xuống 1 ký tự
+              analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm từng từ trong location (trọng số trung bình)
+        // Tìm kiếm từng từ trong location (trọng số thấp nhất)
         should.push({
           match: {
             location: {
               query: trimmedQuery,
-              boost: 2.0, // Trọng số trung bình
-              fuzziness: 'AUTO', // Cho phép lỗi đánh máy
+              boost: 1.0,
+              fuzziness: '1', // Giảm mức fuzziness xuống 1 ký tự
+              analyzer: 'vietnamese_search_analyzer',
             },
+          },
+        });
+
+        // Nếu có query, thêm bộ lọc để đảm bảo kết quả phải chứa từ khóa tìm kiếm trong tên HOẶC địa điểm
+        filter.push({
+          bool: {
+            should: [
+              {
+                match: {
+                  name: {
+                    query: trimmedQuery,
+                    analyzer: 'vietnamese_search_analyzer',
+                  },
+                },
+              },
+              {
+                match: {
+                  location: {
+                    query: trimmedQuery,
+                    analyzer: 'vietnamese_search_analyzer',
+                  },
+                },
+              },
+            ],
+            minimum_should_match: 1,
           },
         });
       }
@@ -247,7 +277,7 @@ export class SearchService {
               must,
               should,
               filter,
-              minimum_should_match: should.length > 0 ? 1 : 0,
+              minimum_should_match: should.length > 0 ? 2 : 0,
             },
           },
           highlight: {
