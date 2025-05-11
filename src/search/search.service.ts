@@ -4,6 +4,7 @@ import { SearchQueryDto } from './dtos/search-query.dto';
 import { FacilityStatusEnum } from '../facilities/enums/facility-status.enum';
 import { FacilityService } from '../facilities/facility.service';
 import { Cron } from '@nestjs/schedule';
+import { SearchSuggestionDto, SuggestionType } from './dtos/search-suggestion.dto';
 
 // Khai báo các interface cho kết quả tìm kiếm
 interface ElasticsearchSource {
@@ -102,14 +103,48 @@ export class SearchService {
         });
       }
 
-      // Add search term for name, description, and location
+      // Add search term for name and location
       if (query && query.trim()) {
+        const trimmedQuery = query.trim();
+        
+        // Tìm kiếm chính xác trong name và location (trọng số cao nhất)
         should.push({
-          multi_match: {
-            query: query.trim(),
-            fields: ['name^3', 'description^2', 'location'],
-            type: 'best_fields',
-            fuzziness: 'AUTO',
+          match_phrase: {
+            name: {
+              query: trimmedQuery,
+              boost: 5.0, // Trọng số cao nhất
+            },
+          },
+        });
+        
+        should.push({
+          match_phrase: {
+            location: {
+              query: trimmedQuery,
+              boost: 4.0, // Trọng số cao thứ hai
+            },
+          },
+        });
+        
+        // Tìm kiếm từng từ trong name (trọng số cao)
+        should.push({
+          match: {
+            name: {
+              query: trimmedQuery,
+              boost: 3.0, // Trọng số cao thứ ba
+              fuzziness: 'AUTO', // Cho phép lỗi đánh máy
+            },
+          },
+        });
+        
+        // Tìm kiếm từng từ trong location (trọng số trung bình)
+        should.push({
+          match: {
+            location: {
+              query: trimmedQuery,
+              boost: 2.0, // Trọng số trung bình
+              fuzziness: 'AUTO', // Cho phép lỗi đánh máy
+            },
           },
         });
       }
@@ -117,29 +152,29 @@ export class SearchService {
       // Xử lý tìm kiếm theo province, district và location
       if (province || district || location) {
         // Nếu có location, sử dụng trực tiếp
-        if (location && location.trim()) {
-          must.push({
-            match: {
-              location: location.trim(),
+      if (location && location.trim()) {
+        must.push({
+          match: {
+            location: location.trim(),
             },
           });
         } 
         // Nếu có province hoặc district, tìm kiếm trong trường location
-        else if (province || district) {
-          let locationQuery = '';
-          
-          if (province) {
-            locationQuery += province.trim();
-          }
-          
-          if (district) {
-            locationQuery += locationQuery ? `, ${district.trim()}` : district.trim();
-          }
-          
-          if (locationQuery) {
+        else {
+          // Tìm kiếm province trong location (nếu có)
+          if (province && province.trim()) {
             must.push({
-              match: {
-                location: locationQuery,
+              match_phrase: {
+                location: province.trim(),
+          },
+        });
+          }
+          
+          // Tìm kiếm district trong location (nếu có)
+          if (district && district.trim()) {
+            must.push({
+              match_phrase: {
+                location: district.trim(),
               },
             });
           }
@@ -218,7 +253,6 @@ export class SearchService {
           highlight: {
             fields: {
               name: {},
-              description: {},
               location: {},
             },
             pre_tags: ['<strong>'],
@@ -298,6 +332,122 @@ export class SearchService {
       }
       // Return empty results on error
       return [];
+    }
+  }
+
+  /**
+   * Get search suggestions based on a prefix
+   * @param suggestionDto The suggestion request parameters
+   * @returns Array of suggestion objects
+   */
+  async getSuggestions(suggestionDto: SearchSuggestionDto) {
+    const { prefix, type = SuggestionType.ALL, size = 5 } = suggestionDto;
+    this.logger.log(`Getting suggestions for prefix: "${prefix}", type: ${type}, size: ${size}`);
+
+    try {
+      if (!prefix || prefix.trim().length === 0) {
+        this.logger.log('Empty prefix, returning empty suggestions');
+        return { suggestions: [] };
+      }
+
+      // Sử dụng match query đơn giản
+      const searchQuery = {
+        body: {
+          size: 10,
+          _source: ["name", "location", "status"],
+          query: {
+            bool: {
+              must: [
+                {
+                  term: {
+                    status: FacilityStatusEnum.ACTIVE
+                  }
+                }
+              ],
+              should: [
+                {
+                  match_phrase_prefix: {
+                    name: {
+                      query: prefix.trim(),
+                      boost: 2.0
+                    }
+                  }
+                },
+                {
+                  match_phrase_prefix: {
+                    location: {
+                      query: prefix.trim(),
+                      boost: 1.0
+                    }
+                  }
+                }
+              ],
+              minimum_should_match: 1
+            }
+          }
+        }
+      };
+
+      this.logger.log(`Suggestion query: ${JSON.stringify(searchQuery)}`);
+
+      // Gọi API Elasticsearch
+      const response = await this.elasticsearchService.search(
+        this.elasticsearchService.getFacilitiesIndex(),
+        searchQuery
+      );
+
+      this.logger.log(`Suggestion response: ${JSON.stringify(response)}`);
+
+      // Process and format the suggestions
+      const result: { suggestions: Array<{ text: string; type: string }> } = { suggestions: [] };
+      
+      if (response.hits && response.hits.hits && response.hits.hits.length > 0) {
+        this.logger.log(`Found ${response.hits.hits.length} suggestions`);
+        
+        // Process each hit
+        for (const hit of response.hits.hits) {
+          const source = hit._source as any;
+          
+          // Check if this is a name match
+          if ((type === SuggestionType.NAME || type === SuggestionType.ALL) && source.name) {
+            result.suggestions.push({
+              text: source.name,
+              type: 'name'
+            });
+          }
+          
+          // Check if this is a location match
+          if ((type === SuggestionType.LOCATION || type === SuggestionType.ALL) && source.location) {
+            result.suggestions.push({
+              text: source.location,
+              type: 'location'
+            });
+          }
+        }
+        
+        // Remove duplicates
+        result.suggestions = result.suggestions.filter((suggestion, index, self) =>
+          index === self.findIndex((s) => s.text === suggestion.text && s.type === suggestion.type)
+        );
+        
+        // Limit to requested size
+        result.suggestions = result.suggestions.slice(0, size);
+      } else {
+        this.logger.log('No suggestions found');
+      }
+      
+      this.logger.log(`Returning ${result.suggestions.length} suggestions`);
+      return result;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(
+          `Error getting suggestions: ${error.message}`,
+          error.stack
+        );
+      } else {
+        this.logger.error('Error getting suggestions: Unknown error');
+      }
+      return { suggestions: [] };
     }
   }
 
