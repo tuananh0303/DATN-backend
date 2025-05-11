@@ -4,6 +4,7 @@ import { EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { PaymentDto } from './dtos/requests/payment.dto';
 import { Request } from 'express';
+import { GenerateMonthlyReportDto } from './dtos/requests/generate-monthly-report.dto';
 
 export interface IPaymentService {
   createWithTransaction(
@@ -20,4 +21,10 @@ export interface IPaymentService {
   ): Promise<any>;
 
   ipn(req: Request): Promise<{ message: string }>;
+
+  generateMonthlyReport(
+    generateMonthlyReportDto: GenerateMonthlyReportDto,
+    ownerId: UUID,
+    facilityId?: UUID,
+  ): Promise<any>;
 }

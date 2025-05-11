@@ -746,4 +746,60 @@ export class FacilityService implements IFacilityService {
       ),
     }));
   }
+
+  // private async monthlyRevenue(month: number, year: number, facilityId?: UUID) {
+  //   const firstDate = new Date(year, month, 1, 7);
+  //   const lastDate = new Date(year, month + 1, 0, 7);
+
+  //   const facilities = await this.facilityRepository.find({
+  //     relations: {
+  //       fieldGroups: {
+  //         fields: {
+  //           bookingSlots: {
+  //             booking: {
+  //               bookingSlots: true,
+  //               payment: true,
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //     where: {
+  //       id: facilityId,
+  //       fieldGroups: {
+  //         fields: {
+  //           bookingSlots: {
+  //             date: Between(firstDate, lastDate),
+  //             booking: {
+  //               status: Not(BookingStatusEnum.INCOMPLETE),
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   });
+
+  //   let revenue = 0;
+
+  //   for (const facility of facilities) {
+  //     for (const fieldGroup of facility.fieldGroups) {
+  //       for (const field of fieldGroup.fields) {
+  //         for (const bookingSlot of field.bookingSlots) {
+  //           const payment = bookingSlot.booking.payment;
+  //           const totalPrice =
+  //             payment.fieldPrice +
+  //             (payment.servicePrice ? payment.servicePrice : 0) -
+  //             (payment.discount ? payment.discount : 0) -
+  //             (payment.refund ? payment.refund : 0);
+
+  //           if (bookingSlot.status !== BookingSlotStatusEnum.UPCOMING) {
+  //             revenue += totalPrice / bookingSlot.booking.bookingSlots.length;
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   return revenue;
+  // }
 }
