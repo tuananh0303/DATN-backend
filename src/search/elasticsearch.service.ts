@@ -121,7 +121,9 @@ export class ElasticsearchService implements OnModuleInit {
                   tokenizer: 'standard',
                   filter: [
                     'lowercase',
-                    'asciifolding' // Loại bỏ dấu tiếng Việt, giúp tìm kiếm không phân biệt dấu
+                    'asciifolding', // Loại bỏ dấu tiếng Việt, giúp tìm kiếm không phân biệt dấu
+                    'vietnamese_stop',
+                    'vietnamese_synonym'
                   ]
                 },
                 vietnamese_search_analyzer: {
@@ -129,7 +131,9 @@ export class ElasticsearchService implements OnModuleInit {
                   tokenizer: 'standard',
                   filter: [
                     'lowercase',
-                    'asciifolding'
+                    'asciifolding',
+                    'vietnamese_stop',
+                    'vietnamese_synonym'
                   ]
                 }
               },
@@ -139,8 +143,20 @@ export class ElasticsearchService implements OnModuleInit {
                   synonyms: [
                     'san, sân',
                     'bong, bóng',
-                    'tennis, ten nit'
+                    'tennis, ten nit',
+                    'da, đá',
+                    'the thao, thể thao',
+                    'bong da, bóng đá',
+                    'bong ro, bóng rổ',
+                    'bong chuyen, bóng chuyền',
+                    'cau long, cầu lông',
+                    'boi, bơi',
+                    'dien kinh, điền kinh'
                   ]
+                },
+                vietnamese_stop: {
+                  type: 'stop',
+                  stopwords: ['và', 'hoặc', 'của', 'cho', 'tại', 'trong', 'ngoài', 'với']
                 }
               }
             }
@@ -649,18 +665,49 @@ export class ElasticsearchService implements OnModuleInit {
    */
   async checkMapping(index: string): Promise<any> {
     try {
-      this.logger.log(`Checking mapping for index ${index}`);
-      const mapping = await this.elasticsearchService.indices.getMapping({
+      const mappingResult = await this.elasticsearchService.indices.getMapping({
         index,
       });
-      this.logger.log(`Current mapping: ${JSON.stringify(mapping)}`);
-      return mapping;
-    } catch (error: any) {
-      this.logger.error(
-        `Error checking mapping: ${error.message}`,
-        error.stack
-      );
-      throw error;
+      return mappingResult;
+    } catch (error) {
+      this.logger.error(`Error checking mapping: ${error.message}`, error.stack);
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * Test analyzer to see how text is tokenized
+   * @param text Text to analyze
+   * @param analyzer Analyzer to use
+   * @returns Analysis result
+   */
+  async testAnalyzer(text: string, analyzer: string = 'vietnamese_search_analyzer'): Promise<any> {
+    try {
+      const result = await this.elasticsearchService.indices.analyze({
+        index: this.indices.facilities,
+        body: {
+          analyzer,
+          text
+        }
+      });
+      
+      return {
+        success: true,
+        analyzer,
+        text,
+        tokens: result.tokens?.map(token => ({
+          token: token.token,
+          start_offset: token.start_offset,
+          end_offset: token.end_offset,
+          position: token.position
+        })) || []
+      };
+    } catch (error) {
+      this.logger.error(`Error testing analyzer: ${error.message}`, error.stack);
+      return { 
+        success: false, 
+        error: error.message 
+      };
     }
   }
 

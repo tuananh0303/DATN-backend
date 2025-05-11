@@ -264,4 +264,69 @@ export class SearchController {
       };
     }
   }
+
+  @ApiOperation({
+    summary: 'Reset and sync Elasticsearch index with improved search settings',
+    description: 'Resets the Elasticsearch index and resyncs all data with improved search settings'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Reset and sync status',
+  })
+  @Get('reset-and-sync')
+  @AuthRoles(AuthRoleEnum.NONE)
+  async resetAndSync() {
+    try {
+      this.logger.log('Starting reset and sync of Elasticsearch index');
+      
+      // 1. Reset the index with updated settings
+      const resetResult = await this.elasticsearchService.resetIndex();
+      
+      if (!resetResult.success) {
+        return {
+          success: false,
+          message: 'Failed to reset Elasticsearch index',
+          error: resetResult.message
+        };
+      }
+      
+      // 2. Sync all facilities to the new index
+      const syncResult = await this.searchService.syncAllFacilitiesToElasticsearch();
+      
+      return {
+        success: true,
+        message: 'Successfully reset and synced Elasticsearch index with improved search settings',
+        resetResult,
+        syncResult
+      };
+    } catch (error) {
+      this.logger.error('Failed to reset and sync Elasticsearch index', error);
+      return {
+        success: false,
+        message: 'Failed to reset and sync Elasticsearch index',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Test analyzer to see how text is tokenized',
+    description: 'Shows how the analyzer breaks down text into tokens'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Analysis result',
+  })
+  @Get('test-analyzer')
+  @AuthRoles(AuthRoleEnum.NONE)
+  async testAnalyzer(@Query('text') text: string, @Query('analyzer') analyzer?: string) {
+    if (!text) {
+      return {
+        success: false,
+        error: 'Text parameter is required'
+      };
+    }
+    
+    return this.elasticsearchService.testAnalyzer(text, analyzer);
+  }
 }

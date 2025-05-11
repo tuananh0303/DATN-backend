@@ -107,65 +107,66 @@ export class SearchService {
       if (query && query.trim()) {
         const trimmedQuery = query.trim();
         
-        // Tìm kiếm chính xác cụm từ đầy đủ trong name (trọng số cao nhất)
+        // Ưu tiên tìm kiếm chính xác cụm từ đầy đủ
         should.push({
           match_phrase: {
             name: {
               query: trimmedQuery,
-              boost: 10.0, // Trọng số rất cao cho match_phrase
-              slop: 3, // Tăng slop từ 2 lên 3 để cho phép linh hoạt hơn
+              boost: 15.0, // Tăng trọng số lên cao hơn
+              slop: 2, // Giảm slop xuống để yêu cầu các từ phải gần nhau hơn
               analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm chính xác cụm từ đầy đủ trong location (trọng số cao)
         should.push({
           match_phrase: {
             location: {
               query: trimmedQuery,
-              boost: 8.0, // Trọng số cao cho match_phrase
-              slop: 3, // Tăng slop từ 2 lên 3
+              boost: 10.0, // Tăng trọng số
+              slop: 2, // Giảm slop
               analyzer: 'vietnamese_search_analyzer',
             },
           },
         });
         
-        // Tìm kiếm mờ hơn với match (trọng số thấp hơn)
+        // Tìm kiếm mờ với trọng số thấp hơn
         should.push({
           match: {
             name: {
               query: trimmedQuery,
-              boost: 3.0, // Tăng trọng số cho match lên 3.0
-              fuzziness: 2, // Tăng fuzziness lên 2 để cho phép sai tối đa 2 ký tự
-              operator: "and", // Yêu cầu tất cả các từ phải xuất hiện
+              boost: 3.0,
+              fuzziness: 1, // Giảm fuzziness để hạn chế kết quả không liên quan
+              operator: 'and', // Yêu cầu tất cả các từ phải xuất hiện
               analyzer: 'vietnamese_search_analyzer',
+              minimum_should_match: '80%', // Tăng tỷ lệ khớp tối thiểu
             },
           },
         });
         
-        // Tìm kiếm mờ hơn với match trong location (trọng số thấp nhất)
         should.push({
           match: {
             location: {
               query: trimmedQuery,
-              boost: 2.0, // Tăng trọng số lên 2.0
-              fuzziness: 2, // Tăng fuzziness lên 2
-              operator: "and", // Yêu cầu tất cả các từ phải xuất hiện
+              boost: 2.0,
+              fuzziness: 1, // Giảm fuzziness
+              operator: 'and', // Yêu cầu tất cả các từ phải xuất hiện
               analyzer: 'vietnamese_search_analyzer',
+              minimum_should_match: '80%', // Tăng tỷ lệ khớp tối thiểu
             },
           },
         });
 
-        // Bắt buộc kết quả phải chứa cụm từ tìm kiếm trong name HOẶC location
+        // Bắt buộc kết quả phải chứa cụm từ tìm kiếm đầy đủ hoặc gần đầy đủ
         must.push({
           bool: {
             should: [
+              // Tìm kiếm chính xác cụm từ với độ linh hoạt thấp
               {
                 match_phrase: {
                   name: {
                     query: trimmedQuery,
-                    slop: 4, // Tăng slop lên 4 để cho phép linh hoạt hơn trong điều kiện bắt buộc
+                    slop: 2,
                     analyzer: 'vietnamese_search_analyzer',
                   },
                 },
@@ -174,18 +175,19 @@ export class SearchService {
                 match_phrase: {
                   location: {
                     query: trimmedQuery,
-                    slop: 4, // Tăng slop lên 4
+                    slop: 2,
                     analyzer: 'vietnamese_search_analyzer',
                   },
                 },
               },
-              // Trường hợp tìm kiếm với các từ riêng lẻ nhưng yêu cầu đầy đủ
+              // Tìm kiếm với các từ riêng lẻ nhưng yêu cầu tất cả các từ phải xuất hiện
               {
                 match: {
                   name: {
                     query: trimmedQuery,
-                    minimum_should_match: "75%", // Giảm từ 90% xuống 75% để cho phép sai chính tả nhiều hơn
-                    fuzziness: 2, // Thêm fuzziness vào match trong điều kiện bắt buộc
+                    operator: 'and',
+                    minimum_should_match: '90%', // Tăng lên 90% để yêu cầu gần như tất cả các từ phải khớp
+                    fuzziness: 1, // Cho phép lỗi chính tả nhẹ
                     analyzer: 'vietnamese_search_analyzer',
                   },
                 },
@@ -194,19 +196,20 @@ export class SearchService {
                 match: {
                   location: {
                     query: trimmedQuery,
-                    minimum_should_match: "75%", // Giảm từ 90% xuống 75%
-                    fuzziness: 2, // Thêm fuzziness vào match trong điều kiện bắt buộc
+                    operator: 'and',
+                    minimum_should_match: '90%', // Tăng lên 90%
+                    fuzziness: 1, // Cho phép lỗi chính tả nhẹ
                     analyzer: 'vietnamese_search_analyzer',
                   },
                 },
               },
-              // Thêm fuzzy match chuyên biệt cho tìm kiếm có lỗi chính tả lớn
+              // Fuzzy match cho lỗi chính tả nhỏ
               {
                 fuzzy: {
                   name: {
                     value: trimmedQuery,
-                    fuzziness: "AUTO", // AUTO sẽ tự động điều chỉnh mức độ fuzziness dựa trên độ dài từ
-                    boost: 2.0, // Trọng số phù hợp
+                    fuzziness: 'AUTO:4,7', // Giới hạn fuzziness dựa trên độ dài từ
+                    boost: 1.5,
                   }
                 }
               },
@@ -214,13 +217,13 @@ export class SearchService {
                 fuzzy: {
                   location: {
                     value: trimmedQuery,
-                    fuzziness: "AUTO",
+                    fuzziness: 'AUTO:4,7',
                     boost: 1.0,
                   }
                 }
               }
             ],
-            minimum_should_match: 1, // Vẫn chỉ cần khớp 1 trong các điều kiện trên
+            minimum_should_match: 1, // Chỉ cần khớp với một trong các điều kiện trên
           },
         });
       }
@@ -228,10 +231,10 @@ export class SearchService {
       // Xử lý tìm kiếm theo province, district và location
       if (province || district || location) {
         // Nếu có location, sử dụng trực tiếp
-      if (location && location.trim()) {
-        must.push({
-          match: {
-            location: location.trim(),
+        if (location && location.trim()) {
+          must.push({
+            match: {
+              location: location.trim(),
             },
           });
         } 
@@ -242,8 +245,8 @@ export class SearchService {
             must.push({
               match_phrase: {
                 location: province.trim(),
-          },
-        });
+              },
+            });
           }
           
           // Tìm kiếm district trong location (nếu có)
