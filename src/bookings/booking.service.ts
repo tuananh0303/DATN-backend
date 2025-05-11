@@ -661,7 +661,10 @@ export class BookingService implements IBookingService {
     );
   }
 
-  public async getManyByOwner(ownerID: UUID): Promise<any[]> {
+  public async getManyByOwner(
+    ownerID: UUID,
+    facilityId?: UUID,
+  ): Promise<any[]> {
     const bookings = await this.bookingRepository.find({
       relations: {
         sport: true,
@@ -676,6 +679,7 @@ export class BookingService implements IBookingService {
           field: {
             fieldGroup: {
               facility: {
+                id: facilityId,
                 owner: {
                   id: ownerID,
                 },
