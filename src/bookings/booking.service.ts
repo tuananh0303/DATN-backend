@@ -670,6 +670,9 @@ export class BookingService implements IBookingService {
         sport: true,
         bookingSlots: {
           field: true,
+          booking: {
+            player: true,
+          },
         },
         payment: true,
         review: true,
