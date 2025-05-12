@@ -18,6 +18,7 @@ import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 import { Person } from 'src/people/person.entity';
 import { GenerateMonthlyReportDto } from './dtos/requests/generate-monthly-report.dto';
 import { BookingSlotStatusEnum } from 'src/booking-slots/enums/booking-slot-status.enum';
+import { PersonService } from 'src/people/person.service';
 
 @Injectable()
 export class PaymentService implements IPaymentService {
@@ -39,6 +40,10 @@ export class PaymentService implements IPaymentService {
      * inject VnpayProvier
      */
     private readonly vnpayProvider: VnpayProvider,
+    /**
+     * inject PersonService
+     */
+    private readonly personService: PersonService,
   ) {}
 
   public async createWithTransaction(
@@ -247,13 +252,22 @@ export class PaymentService implements IPaymentService {
       playerMap.set(payment.booking.player.id, currentValue + 1);
     }
 
+    const topPlayer = Array.from(playerMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
     return {
       revenue,
       bookingCount: payments.length,
       playerCount: playerMap.size,
-      topPlayer: Array.from(playerMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5),
+      topPlayer: topPlayer.map(async (player) => {
+        const playerInfo = await this.personService.findOneById(player[0]);
+
+        return {
+          player: playerInfo,
+          amount: player[1],
+        };
+      }),
     };
   }
 
