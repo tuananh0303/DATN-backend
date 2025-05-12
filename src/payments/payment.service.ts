@@ -196,6 +196,7 @@ export class PaymentService implements IPaymentService {
       relations: {
         booking: {
           bookingSlots: true,
+          player: true,
         },
       },
       where: {
@@ -220,6 +221,8 @@ export class PaymentService implements IPaymentService {
 
     let revenue = 0;
 
+    const playerMap = new Map<UUID, number>();
+
     for (const payment of payments) {
       const totalPrice =
         payment.fieldPrice +
@@ -238,11 +241,19 @@ export class PaymentService implements IPaymentService {
 
       revenue +=
         totalPrice * (playNumber / payment.booking.bookingSlots.length);
+
+      const currentValue = playerMap.get(payment.booking.player.id) ?? 0;
+
+      playerMap.set(payment.booking.player.id, currentValue + 1);
     }
 
     return {
       revenue,
       bookingCount: payments.length,
+      playerCount: playerMap.size,
+      topPlayer: Array.from(playerMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
     };
   }
 
@@ -253,22 +264,25 @@ export class PaymentService implements IPaymentService {
   ): Promise<any> {
     // Lay ra nhung payment da thanh toan
     // Tinh doanh thu
-    const { revenue, bookingCount } = await this.monthlyRevenue(
-      generateMonthlyReportDto.month - 1,
-      generateMonthlyReportDto.year,
-      ownerId,
-      facilityId,
-    );
-
-    const { revenue: prevMonthRevenue, bookingCount: prevMonthBookingCount } =
+    const { revenue, bookingCount, playerCount, topPlayer } =
       await this.monthlyRevenue(
-        generateMonthlyReportDto.month - 2,
+        generateMonthlyReportDto.month - 1,
         generateMonthlyReportDto.year,
         ownerId,
         facilityId,
       );
 
-    // Tinh lich dat san
+    const {
+      revenue: prevMonthRevenue,
+      bookingCount: prevMonthBookingCount,
+      playerCount: prevMonthPlayerCount,
+      topPlayer: prevMonthTopPlayer,
+    } = await this.monthlyRevenue(
+      generateMonthlyReportDto.month - 2,
+      generateMonthlyReportDto.year,
+      ownerId,
+      facilityId,
+    );
 
     // Tinh luong khach hang
     // Tinh ti le khac hang quay lai
@@ -282,6 +296,10 @@ export class PaymentService implements IPaymentService {
       prevMonthRevenue,
       bookingCount,
       prevMonthBookingCount,
+      playerCount,
+      prevMonthPlayerCount,
+      topPlayer,
+      prevMonthTopPlayer,
     };
   }
 }
