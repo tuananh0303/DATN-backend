@@ -4,17 +4,20 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Post,
   Put,
+  Query,
   Req,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { UUID } from 'crypto';
 import { PaymentDto } from './dtos/requests/payment.dto';
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
 import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
 import { Request } from 'express';
+import { GenerateMonthlyReportDto } from './dtos/requests/generate-monthly-report.dto';
 
 @Controller('payment')
 export class PaymentController {
@@ -46,5 +49,32 @@ export class PaymentController {
   @AuthRoles(AuthRoleEnum.NONE)
   public ipn(@Req() req: Request) {
     return this.paymentService.ipn(req);
+  }
+
+  @ApiOperation({
+    summary: 'get all information for display finance report (role: owner)',
+  })
+  @ApiQuery({
+    name: 'facility',
+    type: 'string',
+  })
+  @Post('monthly-report')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  generateMonthlyReport(
+    @Body() generateMonthlyReportDto: GenerateMonthlyReportDto,
+    @ActivePerson('sub') ownerId: UUID,
+    @Query(
+      'facility',
+      new ParseUUIDPipe({
+        optional: true,
+      }),
+    )
+    facilityId?: UUID,
+  ) {
+    return this.paymentService.generateMonthlyReport(
+      generateMonthlyReportDto,
+      ownerId,
+      facilityId,
+    );
   }
 }

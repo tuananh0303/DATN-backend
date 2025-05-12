@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { IPaymentService } from './ipayment.service';
 import { Booking } from 'src/bookings/booking.entity';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Between, DataSource, EntityManager, Not, Repository } from 'typeorm';
 import { Payment } from './payment.entity';
 import { UUID } from 'crypto';
 import { PaymentDto } from './dtos/requests/payment.dto';
@@ -16,6 +16,8 @@ import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 import { Person } from 'src/people/person.entity';
+import { GenerateMonthlyReportDto } from './dtos/requests/generate-monthly-report.dto';
+import { BookingSlotStatusEnum } from 'src/booking-slots/enums/booking-slot-status.enum';
 
 @Injectable()
 export class PaymentService implements IPaymentService {
@@ -179,5 +181,107 @@ export class PaymentService implements IPaymentService {
 
   public async ipn(req: Request): Promise<{ message: string }> {
     return await this.vnpayProvider.ipn(req);
+  }
+
+  public async monthlyRevenue(
+    month: number,
+    year: number,
+    ownerId: UUID,
+    facilityId?: UUID,
+  ) {
+    const firstDate = new Date(year, month, 1, 7);
+    const lastDate = new Date(year, month + 1, 0, 7);
+
+    const payments = await this.paymentRepository.find({
+      relations: {
+        booking: {
+          bookingSlots: true,
+        },
+      },
+      where: {
+        booking: {
+          bookingSlots: {
+            field: {
+              fieldGroup: {
+                facility: {
+                  id: facilityId,
+                  owner: {
+                    id: ownerId,
+                  },
+                },
+              },
+            },
+            date: Between(firstDate, lastDate),
+          },
+          status: Not(BookingStatusEnum.INCOMPLETE),
+        },
+      },
+    });
+
+    let revenue = 0;
+
+    for (const payment of payments) {
+      const totalPrice =
+        payment.fieldPrice +
+        (payment.servicePrice ? payment.servicePrice : 0) -
+        (payment.refund ? payment.refund : 0);
+
+      if (payment.booking.status === BookingStatusEnum.CANCELED) {
+        revenue += totalPrice;
+      }
+
+      const playNumber = payment.booking.bookingSlots.reduce(
+        (prev, curr) =>
+          prev + (curr.status === BookingSlotStatusEnum.DONE ? 1 : 0),
+        0,
+      );
+
+      revenue +=
+        totalPrice * (playNumber / payment.booking.bookingSlots.length);
+    }
+
+    return {
+      revenue,
+      bookingCount: payments.length,
+    };
+  }
+
+  public async generateMonthlyReport(
+    generateMonthlyReportDto: GenerateMonthlyReportDto,
+    ownerId: UUID,
+    facilityId?: UUID,
+  ): Promise<any> {
+    // Lay ra nhung payment da thanh toan
+    // Tinh doanh thu
+    const { revenue, bookingCount } = await this.monthlyRevenue(
+      generateMonthlyReportDto.month - 1,
+      generateMonthlyReportDto.year,
+      ownerId,
+      facilityId,
+    );
+
+    const { revenue: prevMonthRevenue, bookingCount: prevMonthBookingCount } =
+      await this.monthlyRevenue(
+        generateMonthlyReportDto.month - 2,
+        generateMonthlyReportDto.year,
+        ownerId,
+        facilityId,
+      );
+
+    // Tinh lich dat san
+
+    // Tinh luong khach hang
+    // Tinh ti le khac hang quay lai
+    // hien thi bieu do doanh thu
+    // hien thi phan bo doanh thu theo mon the thao
+    // hien thi top field group duoc dat nhieu nhat va so luong booking
+    // hien thi top 5 nguoi choi dat nhieu nhat
+
+    return {
+      revenue,
+      prevMonthRevenue,
+      bookingCount,
+      prevMonthBookingCount,
+    };
   }
 }
