@@ -139,7 +139,7 @@ export class SearchService {
               fuzziness: 1, // Giảm fuzziness để hạn chế kết quả không liên quan
               operator: 'and', // Yêu cầu tất cả các từ phải xuất hiện
               analyzer: 'vietnamese_search_analyzer',
-              minimum_should_match: '80%', // Tăng tỷ lệ khớp tối thiểu
+              minimum_should_match: '90%', // Tăng tỷ lệ khớp tối thiểu
             },
           },
         });
@@ -152,7 +152,7 @@ export class SearchService {
               fuzziness: 1, // Giảm fuzziness
               operator: 'and', // Yêu cầu tất cả các từ phải xuất hiện
               analyzer: 'vietnamese_search_analyzer',
-              minimum_should_match: '80%', // Tăng tỷ lệ khớp tối thiểu
+              minimum_should_match: '90%', // Tăng tỷ lệ khớp tối thiểu
             },
           },
         });
@@ -186,7 +186,7 @@ export class SearchService {
                   name: {
                     query: trimmedQuery,
                     operator: 'and',
-                    minimum_should_match: '90%', // Tăng lên 90% để yêu cầu gần như tất cả các từ phải khớp
+                    minimum_should_match: '100%', // Tăng lên 90% để yêu cầu gần như tất cả các từ phải khớp
                     fuzziness: 1, // Cho phép lỗi chính tả nhẹ
                     analyzer: 'vietnamese_search_analyzer',
                   },
@@ -197,7 +197,7 @@ export class SearchService {
                   location: {
                     query: trimmedQuery,
                     operator: 'and',
-                    minimum_should_match: '90%', // Tăng lên 90%
+                    minimum_should_match: '100%', // Tăng lên 90%
                     fuzziness: 1, // Cho phép lỗi chính tả nhẹ
                     analyzer: 'vietnamese_search_analyzer',
                   },

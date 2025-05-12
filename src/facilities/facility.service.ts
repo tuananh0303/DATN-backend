@@ -796,4 +796,131 @@ export class FacilityService implements IFacilityService {
       ),
     }));
   }
+
+  /**
+   * Phương thức đồng bộ dữ liệu facility mới lên Elasticsearch
+   */
+  private async indexFacilityToElasticsearch(
+    facility: Facility,
+  ): Promise<void> {
+    try {
+      await this.elasticsearchService.indexFacility(facility);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to index facility: ${error.message}`);
+      }
+      throw new Error('Failed to index facility');
+    }
+  }
+
+  /**
+   * Phương thức cập nhật dữ liệu facility trên Elasticsearch
+   */
+  private async updateFacilityInElasticsearch(
+    facility: Facility,
+  ): Promise<void> {
+    try {
+      await this.elasticsearchService.indexFacility(facility);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to update facility in Elasticsearch: ${error.message}`,
+        );
+      }
+      throw new Error('Failed to update facility in Elasticsearch');
+    }
+  }
+
+  /**
+   * Phương thức xóa dữ liệu facility khỏi Elasticsearch
+   */
+  private async deleteFacilityFromElasticsearch(
+    facilityId: UUID,
+  ): Promise<void> {
+    try {
+      await this.elasticsearchService.delete(
+        this.elasticsearchService.getFacilitiesIndex(),
+        facilityId.toString(),
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to delete facility from Elasticsearch: ${error.message}`,
+        );
+      }
+      throw new Error('Failed to delete facility from Elasticsearch');
+    }
+  }
+
+  /**
+   * Phương thức đồng bộ tất cả facility lên Elasticsearch
+   */
+  public async syncAllFacilitiesToElasticsearch(): Promise<void> {
+    this.logger.log('Synchronizing facilities to Elasticsearch');
+    
+    // Load facilities with all relations needed for complete data
+    const facilities = await this.facilityRepository.find({
+      relations: {
+        fieldGroups: {
+          fields: true,
+          sports: true,
+        },
+        owner: true,
+        licenses: {
+          sport: true,
+        },
+        certificate: true,
+        services: true,
+        vouchers: true,
+      },
+      order: {
+        name: 'ASC',
+      },
+    });
+
+    if (facilities.length === 0) {
+      this.logger.log('No facilities found to synchronize');
+      return;
+    }
+
+    // Transform facilities to include minPrice and maxPrice like getByFacility does
+    const processedFacilities = facilities.map((facility) => ({
+      ...facility,
+      minPrice: facility.fieldGroups.length > 0 
+        ? Math.min(...facility.fieldGroups.map((fieldGroup) => fieldGroup.basePrice))
+        : 0,
+      maxPrice: facility.fieldGroups.length > 0
+        ? Math.max(...facility.fieldGroups.map((fieldGroup) => fieldGroup.basePrice))
+        : 0,
+    }));
+    
+    try {
+      await this.elasticsearchService.bulkIndex(
+        this.elasticsearchService.getFacilitiesIndex(),
+        processedFacilities,
+      );
+      this.logger.log(`Synchronized ${facilities.length} facilities to Elasticsearch`);
+    } catch (error: unknown) {
+      this.logger.error('Failed to sync facilities to Elasticsearch', error);
+      if (error instanceof Error) {
+        throw new Error(
+          `Failed to sync facilities to Elasticsearch: ${error.message}`,
+        );
+      }
+      throw new Error('Failed to sync facilities to Elasticsearch');
+    }
+  }
+
+  // Sau mỗi lần cập nhật thông tin của facility, đồng bộ dữ liệu vào Elasticsearch
+  private async syncFacilityToElasticsearch(facilityId: UUID) {
+    try {
+      const facility = await this.findOneById(facilityId);
+      if (facility) {
+        await this.elasticsearchService.indexFacility(facility);
+        console.log(`Synchronized facility ${facilityId} to Elasticsearch`);
+      }
+    } catch (error) {
+      console.error(`Failed to sync facility ${facilityId} to Elasticsearch:`, error);
+    }
+  }
 }
