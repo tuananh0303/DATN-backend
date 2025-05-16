@@ -82,7 +82,7 @@ export class ApprovalLicenseProvider implements ApprovalAbstract {
           manager,
         );
       } else {
-        license.verified = approval.license;
+        license.verified = approval.license!;
       }
 
       try {

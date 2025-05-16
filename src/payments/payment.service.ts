@@ -5,17 +5,20 @@ import {
 } from '@nestjs/common';
 import { IPaymentService } from './ipayment.service';
 import { Booking } from 'src/bookings/booking.entity';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Between, DataSource, EntityManager, Not, Repository } from 'typeorm';
 import { Payment } from './payment.entity';
 import { UUID } from 'crypto';
 import { PaymentDto } from './dtos/requests/payment.dto';
 import { VoucherService } from 'src/vouchers/voucher.service';
-import { PaymentStatusEnum } from './enums/payment-status.enum';
 import { VoucherTypeEnum } from 'src/vouchers/enums/voucher-type.enum';
 import { VnpayProvider } from './providers/vnpay.provider';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
+import { Person } from 'src/people/person.entity';
+import { GenerateMonthlyReportDto } from './dtos/requests/generate-monthly-report.dto';
+import { BookingSlotStatusEnum } from 'src/booking-slots/enums/booking-slot-status.enum';
+import { PersonService } from 'src/people/person.service';
 
 @Injectable()
 export class PaymentService implements IPaymentService {
@@ -37,6 +40,10 @@ export class PaymentService implements IPaymentService {
      * inject VnpayProvier
      */
     private readonly vnpayProvider: VnpayProvider,
+    /**
+     * inject PersonService
+     */
+    private readonly personService: PersonService,
   ) {}
 
   public async createWithTransaction(
@@ -87,8 +94,8 @@ export class PaymentService implements IPaymentService {
         );
       });
 
-    if (payment.status !== PaymentStatusEnum.UNPAID) {
-      throw new BadRequestException('An error occurred');
+    if (payment.booking.status !== BookingStatusEnum.INCOMPLETE) {
+      throw new BadRequestException('The booking must be incomplete');
     }
 
     return await this.dataSource.transaction<{ paymentUrl: string }>(
@@ -143,15 +150,35 @@ export class PaymentService implements IPaymentService {
           }
         }
 
+        if (paymentDto.refundedPoint) {
+          // get player
+          const player = await manager
+            .findOneOrFail(Person, {
+              where: {
+                id: playerId,
+              },
+            })
+            .catch(() => {
+              throw new BadRequestException('Not found the player');
+            });
+
+          if (player.refundedPoint < paymentDto.refundedPoint) {
+            throw new BadRequestException(
+              'The player has refunded points lower than required',
+            );
+          }
+
+          player.refundedPoint -= paymentDto.refundedPoint;
+
+          await manager.save(player);
+
+          payment.refundedPoint = paymentDto.refundedPoint;
+        }
+
         await manager.save(payment);
 
-        const booking = payment.booking;
-
-        booking.status = BookingStatusEnum.COMPLETED;
-
-        await manager.save(booking);
-
         // if(paymentDto.paymentOption ===)
+
         return this.vnpayProvider.payment(payment, req);
       },
     );
@@ -159,5 +186,141 @@ export class PaymentService implements IPaymentService {
 
   public async ipn(req: Request): Promise<{ message: string }> {
     return await this.vnpayProvider.ipn(req);
+  }
+
+  public async monthlyRevenue(
+    month: number,
+    year: number,
+    ownerId: UUID,
+    facilityId?: UUID,
+  ) {
+    const firstDate = new Date(year, month, 1, 7);
+    const lastDate = new Date(year, month + 1, 0, 7);
+
+    const payments = await this.paymentRepository.find({
+      relations: {
+        booking: {
+          bookingSlots: true,
+          player: true,
+        },
+      },
+      where: {
+        booking: {
+          bookingSlots: {
+            field: {
+              fieldGroup: {
+                facility: {
+                  id: facilityId,
+                  owner: {
+                    id: ownerId,
+                  },
+                },
+              },
+            },
+            date: Between(firstDate, lastDate),
+          },
+          status: Not(BookingStatusEnum.INCOMPLETE),
+        },
+      },
+    });
+
+    let revenue = 0;
+
+    const playerMap = new Map<UUID, number>();
+
+    for (const payment of payments) {
+      const totalPrice =
+        payment.fieldPrice +
+        (payment.servicePrice ? payment.servicePrice : 0) -
+        (payment.refund ? payment.refund : 0);
+
+      if (payment.booking.status === BookingStatusEnum.CANCELED) {
+        revenue += totalPrice;
+      }
+
+      const playNumber = payment.booking.bookingSlots.reduce(
+        (prev, curr) =>
+          prev + (curr.status === BookingSlotStatusEnum.DONE ? 1 : 0),
+        0,
+      );
+
+      revenue +=
+        totalPrice * (playNumber / payment.booking.bookingSlots.length);
+
+      const currentValue = playerMap.get(payment.booking.player.id) ?? 0;
+
+      playerMap.set(payment.booking.player.id, currentValue + 1);
+    }
+
+    const topPlayer = Array.from(playerMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const resultTopPlayer = await Promise.all(
+      topPlayer.map(async (player) => {
+        const playerInfo = await this.personService.findOneById(player[0]);
+        return {
+          player: playerInfo,
+          amount: player[1],
+        };
+      }),
+    );
+
+    console.log(resultTopPlayer);
+
+    return {
+      revenue,
+      bookingCount: payments.length,
+      playerCount: playerMap.size,
+      topPlayer: resultTopPlayer,
+    };
+  }
+
+  public async generateMonthlyReport(
+    generateMonthlyReportDto: GenerateMonthlyReportDto,
+    ownerId: UUID,
+    facilityId?: UUID,
+  ): Promise<any> {
+    // Lay ra nhung payment da thanh toan
+    // Tinh doanh thu
+    const { revenue, bookingCount, playerCount, topPlayer } =
+      await this.monthlyRevenue(
+        generateMonthlyReportDto.month - 1,
+        generateMonthlyReportDto.year,
+        ownerId,
+        facilityId,
+      );
+
+    console.log(topPlayer);
+
+    const {
+      revenue: prevMonthRevenue,
+      bookingCount: prevMonthBookingCount,
+      playerCount: prevMonthPlayerCount,
+      topPlayer: prevMonthTopPlayer,
+    } = await this.monthlyRevenue(
+      generateMonthlyReportDto.month - 2,
+      generateMonthlyReportDto.year,
+      ownerId,
+      facilityId,
+    );
+
+    // Tinh luong khach hang
+    // Tinh ti le khac hang quay lai
+    // hien thi bieu do doanh thu
+    // hien thi phan bo doanh thu theo mon the thao
+    // hien thi top field group duoc dat nhieu nhat va so luong booking
+    // hien thi top 5 nguoi choi dat nhieu nhat
+
+    return {
+      revenue,
+      prevMonthRevenue,
+      bookingCount,
+      prevMonthBookingCount,
+      playerCount,
+      prevMonthPlayerCount,
+      topPlayer,
+      prevMonthTopPlayer,
+    };
   }
 }

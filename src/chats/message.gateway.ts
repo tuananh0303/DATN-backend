@@ -79,6 +79,8 @@ export class MessageGateway
       }
     } catch (error) {
       this.emitException(client, String(error));
+
+      client.disconnect();
     }
   }
 
@@ -167,7 +169,9 @@ export class MessageGateway
         ([, value]) => value === participant.personId,
       );
 
-      this.server.to(socketId[0][0]).socketsJoin(conversation.id);
+      if (socketId.length > 0) {
+        this.server.to(socketId[0][0]).socketsJoin(conversation.id);
+      }
     }
 
     this.server.to(conversation.id).emit('join-conversation', conversation);
@@ -180,8 +184,10 @@ export class MessageGateway
       ([, value]) => value === participant.personId,
     );
 
-    this.server.to(socketId[0][0]).socketsJoin(conversation.id);
+    if (socketId.length > 0) {
+      this.server.to(socketId[0][0]).socketsJoin(conversation.id);
 
-    this.server.to(socketId[0][0]).emit('add-person', conversation);
+      this.server.to(socketId[0][0]).emit('add-person', conversation);
+    }
   }
 }

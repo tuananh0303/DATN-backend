@@ -11,7 +11,7 @@ import { PaymentModule } from 'src/payments/payment.module';
 import { ServiceModule } from 'src/services/service.module';
 import { AdditionalServiceModule } from 'src/additional-services/additional-service.module';
 import { FacilityModule } from 'src/facilities/facility.module';
-import { BookingDraftCleanerProvider } from './schedules/booking-draft-cleaner.provider';
+import { IncompleteBookingCleaner } from './schedules/incomplete-booking-cleaner.provider';
 
 @Module({
   imports: [
@@ -20,13 +20,13 @@ import { BookingDraftCleanerProvider } from './schedules/booking-draft-cleaner.p
     PersonModule,
     SportModule,
     BookingSlotModule,
-    PaymentModule,
+    forwardRef(() => PaymentModule),
     forwardRef(() => ServiceModule),
     AdditionalServiceModule,
     FacilityModule,
   ],
   controllers: [BookingController],
-  providers: [BookingService, BookingDraftCleanerProvider],
+  providers: [BookingService, IncompleteBookingCleaner],
   exports: [BookingService],
 })
 export class BookingModule {}

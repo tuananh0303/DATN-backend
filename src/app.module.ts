@@ -30,6 +30,7 @@ import { ReviewModule } from './reviews/review.module';
 import { FavortiteFacilityModule } from './favorite-facilities/favortite-facility.module';
 import { SearchModule } from './search/search.module';
 import { ChatModule } from './chats/chat.module';
+import { PlaymateModule } from './playmates/playmate.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { ChatModule } from './chats/chat.module';
     FavortiteFacilityModule,
     SearchModule,
     ChatModule,
+    PlaymateModule,
   ],
   controllers: [AppController],
   providers: [

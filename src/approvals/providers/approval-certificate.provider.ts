@@ -64,7 +64,7 @@ export class ApprovalCertificateProvider implements ApprovalAbstract {
           throw new BadRequestException('An error occurred');
         });
 
-      certificate.verified = approval.certifiacte;
+      certificate.verified = approval.certifiacte!;
 
       try {
         await manager.save(approval);

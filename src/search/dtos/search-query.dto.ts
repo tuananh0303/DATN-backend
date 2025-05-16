@@ -5,8 +5,6 @@ import {
   IsNumber,
   Min,
   Max,
-  IsArray,
-  IsInt,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -45,6 +43,14 @@ export class SearchQueryDto {
   @IsOptional()
   location?: string;
 
+  @IsString()
+  @IsOptional()
+  province?: string;
+
+  @IsString()
+  @IsOptional()
+  district?: string;
+
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
@@ -52,9 +58,7 @@ export class SearchQueryDto {
   @Max(5)
   minRating?: number;
 
-  @IsArray()
-  @IsInt({ each: true })
   @IsOptional()
   @Type(() => Number)
-  sportIds?: number[];
+  sportIds?: number | number[];
 }

@@ -1,7 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
-
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUrl,
+  Max,
+  Min,
+} from 'class-validator';
 export class UpdateReviewDto {
+  @ApiProperty({
+    type: 'number',
+  })
+  @IsNumber()
+  @IsPositive()
+  @IsNotEmpty()
+  reviewId: number;
+
   @ApiProperty({
     type: 'number',
     example: 3,
@@ -19,4 +36,12 @@ export class UpdateReviewDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiProperty({
+    type: [String],
+  })
+  @IsUrl({}, { each: true })
+  @IsArray()
+  @IsNotEmpty()
+  imageUrl: string[];
 }

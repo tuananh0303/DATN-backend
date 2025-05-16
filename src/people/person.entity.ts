@@ -83,6 +83,12 @@ export class Person {
   })
   role: PersonRoleEnum;
 
+  @Column({
+    type: 'int4',
+    default: 0,
+  })
+  refundedPoint: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

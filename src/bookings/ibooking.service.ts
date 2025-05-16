@@ -38,4 +38,10 @@ export interface IBookingService {
   getDetail(bookingId: UUID): Promise<any>;
 
   getSchedule(getScheduleDto: GetScheduleDto, ownerId: UUID): Promise<any[]>;
+
+  getManyByOwner(ownerID: UUID, facilityId?: UUID): Promise<any[]>;
+
+  save(booking: Booking): Promise<any>;
+
+  cancelBooking(bookingId: UUID, playerId: UUID): Promise<{ message: string }>;
 }

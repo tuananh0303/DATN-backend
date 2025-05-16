@@ -6,14 +6,17 @@ import { PaymentController } from './payment.controller';
 import { VoucherModule } from 'src/vouchers/voucher.module';
 import { VnpayProvider } from './providers/vnpay.provider';
 import { ServiceModule } from 'src/services/service.module';
-import { UnpaidPaymentSchedule } from './schedules/unpaid-payment.schedule';
+import { BookingModule } from 'src/bookings/booking.module';
+import { PersonModule } from 'src/people/person.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment]),
     VoucherModule,
     forwardRef(() => ServiceModule),
+    forwardRef(() => BookingModule),
+    PersonModule,
   ],
-  providers: [PaymentService, VnpayProvider, UnpaidPaymentSchedule],
+  providers: [PaymentService, VnpayProvider],
   exports: [PaymentService],
   controllers: [PaymentController],
 })

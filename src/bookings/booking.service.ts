@@ -13,13 +13,11 @@ import {
   Between,
   DataSource,
   EntityManager,
-  In,
   LessThanOrEqual,
   MoreThanOrEqual,
   Not,
   Repository,
 } from 'typeorm';
-import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
 import { FieldService } from 'src/fields/field.service';
 import { isBetweenTime } from 'src/util/is-between-time';
 import { PersonService } from 'src/people/person.service';
@@ -41,6 +39,7 @@ import { FacilityStatusEnum } from 'src/facilities/enums/facility-status.enum';
 import { FieldStatusEnum } from 'src/fields/enums/field-status.enum';
 import { FacilityService } from 'src/facilities/facility.service';
 import { GetScheduleDto } from './dtos/requests/get-schedule.dto';
+import { BookingSlotStatusEnum } from 'src/booking-slots/enums/booking-slot-status.enum';
 
 @Injectable()
 export class BookingService implements IBookingService {
@@ -69,6 +68,7 @@ export class BookingService implements IBookingService {
     /**
      * inject PaymentService
      */
+    @Inject(forwardRef(() => PaymentService))
     private readonly paymentService: PaymentService,
     /**
      * inject BookingRepository
@@ -217,7 +217,7 @@ export class BookingService implements IBookingService {
           createDraftBookingDto.startTime,
         );
 
-        fieldPrice = field.fieldGroup.basePrice * playTime;
+        fieldPrice += field.fieldGroup.basePrice * playTime;
 
         if (field.fieldGroup.numberOfPeaks > 0) {
           const overlapPeak = durationOverlapTime(
@@ -284,9 +284,7 @@ export class BookingService implements IBookingService {
             date: date,
           },
           startTime: Between(startTime, endTime),
-          payment: {
-            status: Not(PaymentStatusEnum.CANCELLED),
-          },
+          status: Not(BookingStatusEnum.CANCELED),
         },
         {
           bookingSlots: {
@@ -294,11 +292,9 @@ export class BookingService implements IBookingService {
               id: fieldId,
             },
             date: date,
-          },
-          payment: {
-            status: Not(PaymentStatusEnum.CANCELLED),
           },
           endTime: Between(startTime, endTime),
+          status: Not(BookingStatusEnum.CANCELED),
         },
         {
           bookingSlots: {
@@ -306,12 +302,10 @@ export class BookingService implements IBookingService {
               id: fieldId,
             },
             date: date,
-          },
-          payment: {
-            status: Not(PaymentStatusEnum.CANCELLED),
           },
           startTime: LessThanOrEqual(startTime),
           endTime: MoreThanOrEqual(endTime),
+          status: Not(BookingStatusEnum.CANCELED),
         },
       ],
     });
@@ -334,8 +328,8 @@ export class BookingService implements IBookingService {
       'payment',
     ]);
 
-    if (booking.status !== BookingStatusEnum.DRAFT) {
-      throw new BadRequestException('The booking must be draft');
+    if (booking.status !== BookingStatusEnum.INCOMPLETE) {
+      throw new BadRequestException('The booking must be incomplete');
     }
 
     if (updateBookingSlotDto.bookingSlots.length === 0) {
@@ -490,8 +484,8 @@ export class BookingService implements IBookingService {
       'payment',
     ]);
 
-    if (booking.status !== BookingStatusEnum.DRAFT) {
-      throw new BadRequestException('The booking must be draft');
+    if (booking.status !== BookingStatusEnum.INCOMPLETE) {
+      throw new BadRequestException('The booking must be incomplete');
     }
 
     const playTime = duration(booking.startTime, booking.endTime);
@@ -524,9 +518,7 @@ export class BookingService implements IBookingService {
                     bookingSlots: {
                       date: bookingSlot.date,
                     },
-                    payment: {
-                      status: Not(PaymentStatusEnum.CANCELLED),
-                    },
+                    status: Not(BookingStatusEnum.CANCELED),
                     startTime: Between(booking.startTime, booking.endTime),
                   },
                 },
@@ -536,9 +528,7 @@ export class BookingService implements IBookingService {
                     bookingSlots: {
                       date: bookingSlot.date,
                     },
-                    payment: {
-                      status: Not(PaymentStatusEnum.CANCELLED),
-                    },
+                    status: Not(BookingStatusEnum.CANCELED),
                     endTime: Between(booking.startTime, booking.endTime),
                   },
                 },
@@ -548,9 +538,7 @@ export class BookingService implements IBookingService {
                     bookingSlots: {
                       date: bookingSlot.date,
                     },
-                    payment: {
-                      status: Not(PaymentStatusEnum.CANCELLED),
-                    },
+                    status: Not(BookingStatusEnum.CANCELED),
                     startTime: LessThanOrEqual(booking.startTime),
                     endTime: MoreThanOrEqual(booking.endTime),
                   },
@@ -654,14 +642,58 @@ export class BookingService implements IBookingService {
         player: {
           id: playerId,
         },
-        status: BookingStatusEnum.COMPLETED,
-        payment: {
-          status: In([PaymentStatusEnum.CANCELLED, PaymentStatusEnum.PAID]),
-        },
+        status: Not(BookingStatusEnum.INCOMPLETE),
       },
     });
 
     // get facility and fieldGroup by field in booking
+    return await Promise.all(
+      bookings.map(async (booking) => {
+        const facility = await this.facilityService.findOneByField(
+          booking.bookingSlots[0].field.id,
+        );
+
+        return {
+          facility,
+          booking,
+        };
+      }),
+    );
+  }
+
+  public async getManyByOwner(
+    ownerID: UUID,
+    facilityId?: UUID,
+  ): Promise<any[]> {
+    const bookings = await this.bookingRepository.find({
+      relations: {
+        sport: true,
+        bookingSlots: {
+          field: true,
+          booking: {
+            player: true,
+          },
+        },
+        payment: true,
+        review: true,
+      },
+      where: {
+        bookingSlots: {
+          field: {
+            fieldGroup: {
+              facility: {
+                id: facilityId,
+                owner: {
+                  id: ownerID,
+                },
+              },
+            },
+          },
+        },
+        status: Not(BookingStatusEnum.INCOMPLETE),
+      },
+    });
+
     return await Promise.all(
       bookings.map(async (booking) => {
         const facility = await this.facilityService.findOneByField(
@@ -693,15 +725,17 @@ export class BookingService implements IBookingService {
         throw new NotFoundException('Not found the booking');
       });
 
-    if (booking.status !== BookingStatusEnum.DRAFT) {
-      throw new BadRequestException('You only can delete the draft booking');
+    if (booking.status !== BookingStatusEnum.INCOMPLETE) {
+      throw new BadRequestException(
+        'You only can delete the incomplete booking',
+      );
     }
 
     try {
       await this.bookingRepository.remove(booking);
     } catch {
       throw new BadRequestException(
-        'An error occurred when delete the draft booking',
+        'An error occurred when delete the incomplete booking',
       );
     }
 
@@ -768,9 +802,7 @@ export class BookingService implements IBookingService {
             },
           },
         },
-        payment: {
-          status: Not(PaymentStatusEnum.CANCELLED),
-        },
+        status: Not(BookingStatusEnum.INCOMPLETE),
       },
     });
 
@@ -778,5 +810,77 @@ export class BookingService implements IBookingService {
       ...rest,
       field: bookingSlots[0].field,
     }));
+  }
+
+  public async save(booking: Booking): Promise<any> {
+    await this.bookingRepository.save(booking);
+  }
+
+  public async cancelBooking(
+    bookingId: UUID,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    const booking = await this.findOneByIdAndPlayer(bookingId, playerId, [
+      'bookingSlots',
+      'payment',
+      'player',
+    ]);
+
+    if (booking.status !== BookingStatusEnum.COMPLETED) {
+      throw new BadRequestException('The booking status must be completed');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const currentDate = new Date();
+
+      currentDate.setHours(0, 0, 0, 0);
+
+      let refund = 0;
+
+      const dayPrice =
+        (booking.payment.fieldPrice +
+          (booking.payment.servicePrice ? booking.payment.servicePrice : 0)) /
+        booking.bookingSlots.length;
+
+      for (const bookingSlot of booking.bookingSlots) {
+        if (bookingSlot.status === BookingSlotStatusEnum.UPCOMING) {
+          const dayDifference =
+            (bookingSlot.date.valueOf() - currentDate.valueOf()) /
+            (1000 * 3600 * 24);
+
+          if (dayDifference >= 7) {
+            refund += dayPrice;
+          } else if (dayDifference >= 3) {
+            refund += dayPrice * 0.5;
+          }
+
+          bookingSlot.status = BookingSlotStatusEnum.CANELED;
+
+          await manager.save(bookingSlot);
+        }
+      }
+
+      const refundedPoint = Math.floor(refund / 1000);
+
+      const payment = booking.payment;
+
+      payment.refund = refundedPoint;
+
+      await manager.save(payment);
+
+      booking.status = BookingStatusEnum.CANCELED;
+
+      await manager.save(booking);
+
+      const player = booking.player;
+
+      player.refundedPoint += refundedPoint;
+
+      await manager.save(player);
+    });
+
+    return {
+      message: 'Cancel booking successful',
+    };
   }
 }

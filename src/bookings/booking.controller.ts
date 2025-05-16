@@ -13,7 +13,7 @@ import { BookingService } from './booking.service';
 import { CreateDraftBookingDto } from './dtos/requests/create-draft-booking.dto';
 import { ActivePerson } from 'src/auths/decorators/active-person.decorator';
 import { UUID } from 'crypto';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuthRoles } from 'src/auths/decorators/auth-role.decorator';
 import { AuthRoleEnum } from 'src/auths/enums/auth-role.enum';
 import { UpdateBookingSlotDto } from './dtos/requests/update-booking-slot.dto';
@@ -85,6 +85,28 @@ export class BookingController {
   }
 
   @ApiOperation({
+    summary: 'get all booking of owner (role: owner)',
+  })
+  @ApiQuery({
+    name: 'facility',
+    type: 'string',
+  })
+  @Get('owner')
+  @AuthRoles(AuthRoleEnum.OWNER)
+  public getManyByOwner(
+    @ActivePerson('sub') ownerId: UUID,
+    @Query(
+      'facility',
+      new ParseUUIDPipe({
+        optional: true,
+      }),
+    )
+    facilityId?: UUID,
+  ) {
+    return this.bookingService.getManyByOwner(ownerId, facilityId);
+  }
+
+  @ApiOperation({
     summary: 'delete draft booking (role: player)',
   })
   @Delete(':bookingId/delete-draft')
@@ -115,5 +137,17 @@ export class BookingController {
     @ActivePerson('sub') ownerId: UUID,
   ) {
     return this.bookingService.getSchedule(getScheduleDto, ownerId);
+  }
+
+  @ApiOperation({
+    summary: 'cancel booking (role: player)',
+  })
+  @Put(':bookingId/cancel')
+  @AuthRoles(AuthRoleEnum.PLAYER)
+  public cancelBooking(
+    @Param('bookingId', ParseUUIDPipe) bookingId: UUID,
+    @ActivePerson('sub') playerId: UUID,
+  ) {
+    return this.bookingService.cancelBooking(bookingId, playerId);
   }
 }

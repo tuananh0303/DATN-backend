@@ -12,7 +12,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CloudUploaderService } from 'src/cloud-uploader/cloud-uploader.service';
 import { FacilityService } from 'src/facilities/facility.service';
-import { PaymentStatusEnum } from 'src/payments/enums/payment-status.enum';
+import { UpdateReviewDto } from './dtos/requests/update-review.dto';
+import { BookingStatusEnum } from 'src/bookings/enums/booking-status.enum';
 
 @Injectable()
 export class ReviewService implements IReviewService {
@@ -47,8 +48,8 @@ export class ReviewService implements IReviewService {
       ['bookingSlots.field', 'review', 'payment'],
     );
 
-    if (booking.payment.status !== PaymentStatusEnum.PAID) {
-      throw new BadRequestException('The booking is unpaid or cancel');
+    if (booking.status !== BookingStatusEnum.COMPLETED) {
+      throw new BadRequestException('The booking must be completed');
     }
 
     let isAccept = false;
@@ -57,9 +58,6 @@ export class ReviewService implements IReviewService {
       const bookingDate = new Date(
         bookingSlot.date.toISOString().split('T')[0] + ' ' + booking.startTime,
       );
-
-      console.log(booking.createdAt);
-
       if (bookingDate < new Date(new Date().toString())) {
         isAccept = true;
 
@@ -225,5 +223,45 @@ export class ReviewService implements IReviewService {
       .catch(() => {
         throw new NotFoundException('Not found the review');
       });
+  }
+
+  public async updateReview(
+    updateReviewDto: UpdateReviewDto,
+    playerId: UUID,
+  ): Promise<{ message: string }> {
+    const review = await this.reviewRepository
+      .findOneOrFail({
+        where: {
+          id: updateReviewDto.reviewId,
+          booking: {
+            player: {
+              id: playerId,
+            },
+          },
+        },
+      })
+      .catch(() => {
+        throw new BadRequestException('Not found the review');
+      });
+
+    if (review.feedback) {
+      throw new BadRequestException('The review has been feedbacked');
+    }
+
+    if (updateReviewDto.rating) review.rating = updateReviewDto.rating;
+
+    if (updateReviewDto.comment) review.comment = updateReviewDto.comment;
+
+    review.imageUrl = updateReviewDto.imageUrl;
+
+    try {
+      await this.reviewRepository.save(review);
+    } catch {
+      throw new BadRequestException('An error occurred when update reivew');
+    }
+
+    return {
+      message: 'Update review successful',
+    };
   }
 }
