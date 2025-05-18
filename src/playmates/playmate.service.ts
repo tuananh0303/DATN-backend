@@ -150,11 +150,11 @@ export class PlaymateService implements IPlaymateService {
 
       if (updatePlaymateDto.isTeam) playmate.isTeam = updatePlaymateDto.isTeam;
 
-      if (updatePlaymateDto.minParticipant)
-        playmate.minParticipant = updatePlaymateDto.minParticipant;
+      if (updatePlaymateDto.numberOfParticipants)
+        playmate.numberOfParticipants = updatePlaymateDto.numberOfParticipants;
 
-      if (updatePlaymateDto.maxParticipant)
-        playmate.maxParticipant = updatePlaymateDto.maxParticipant;
+      if (updatePlaymateDto.positions)
+        playmate.positions = updatePlaymateDto.positions;
 
       if (updatePlaymateDto.genderPreference)
         playmate.genderPreference = updatePlaymateDto.genderPreference;
@@ -208,7 +208,7 @@ export class PlaymateService implements IPlaymateService {
       (participant) => participant.status === ParticipantStatusEnum.ACCEPTED,
     ).length;
 
-    if (numberofAcceptParticipant >= playmate.maxParticipant) {
+    if (numberofAcceptParticipant >= playmate.numberOfParticipants) {
       throw new BadRequestException('The playmate is max participant');
     }
 
@@ -380,7 +380,7 @@ export class PlaymateService implements IPlaymateService {
         (participant) => participant.status === ParticipantStatusEnum.ACCEPTED,
       ).length;
 
-      if (numberofAcceptParticipant >= playmate.maxParticipant) {
+      if (numberofAcceptParticipant >= playmate.numberOfParticipants) {
         throw new BadRequestException('The playmate is max participant');
       }
     }

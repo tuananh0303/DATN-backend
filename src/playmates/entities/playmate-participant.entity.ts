@@ -48,4 +48,11 @@ export class PlaymateParticipant {
     nullable: true,
   })
   note?: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  position?: string;
 }

@@ -95,13 +95,15 @@ export class Playmate {
     type: 'integer',
     nullable: false,
   })
-  minParticipant: number;
+  numberOfParticipants: number;
 
   @Column({
-    type: 'integer',
-    nullable: false,
+    type: 'varchar',
+    length: 255,
+    array: true,
+    nullable: true,
   })
-  maxParticipant: number;
+  positions?: string[];
 
   @Column({
     type: 'enum',
@@ -137,10 +139,6 @@ export class Playmate {
       (!this.maleCost || !this.femaleCost)
     ) {
       throw new BadRequestException('Miss male or female cost');
-    }
-
-    if (this.minParticipant > this.maxParticipant) {
-      throw new BadRequestException('wrong number of participant');
     }
   }
 }

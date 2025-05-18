@@ -105,15 +105,7 @@ export class CreatePlaymateDto {
   @IsNumber()
   @IsNotEmpty()
   @IsPositive()
-  minParticipant: number;
-
-  @ApiProperty({
-    type: 'number',
-  })
-  @IsNumber()
-  @IsNotEmpty()
-  @IsPositive()
-  maxParticipant: number;
+  numberOfParticipants: number;
 
   @ApiProperty({
     enum: GenderPreferenceEnum,
@@ -130,4 +122,12 @@ export class CreatePlaymateDto {
   @IsEnum(SkillLevelEnum)
   @IsNotEmpty()
   skillLevel: SkillLevelEnum;
+
+  @ApiProperty({
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  positions?: string[];
 }
