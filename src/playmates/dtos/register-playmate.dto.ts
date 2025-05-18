@@ -31,4 +31,11 @@ export class RegisterPlaymateDto {
   @IsString()
   @IsOptional()
   note?: string;
+
+  @ApiProperty({
+    type: 'string',
+  })
+  @IsOptional()
+  @IsString()
+  position?: string;
 }
