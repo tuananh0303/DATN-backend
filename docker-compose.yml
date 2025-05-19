@@ -1,6 +1,30 @@
 version: '3.8'
 
 services:
+  backend:
+    container_name: backend-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=260708102001
+      - DATABASE_NAME=sport-booking
+      - ELASTICSEARCH_NODE=http://elasticsearch:9200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
   postgres:
     container_name: postgres-db
     image: postgres:latest
